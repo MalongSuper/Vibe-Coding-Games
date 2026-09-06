@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Head Math Pro</title>
+
+<style>
+:root {
+    --bg-dark: #080c14;
+    --card-bg: rgba(15, 23, 42, 0.8);
+    --border-color: rgba(56, 189, 248, 0.15);
+    --primary: #38bdf8;
+    --primary-glow: rgba(56, 189, 248, 0.4);
+    --success: #22c55e;
+    --success-glow: rgba(34, 197, 94, 0.3);
+    --error: #ef4444;
+    --error-glow: rgba(239, 68, 68, 0.4);
+    --text-muted: #64748b;
+}
+
+body {
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg-dark);
+    color: white;
+    margin: 0;
+    padding-top: 120px;
+    display: flex;
+    justify-content: center;
+    overflow-x: hidden;
+    min-height: 100vh;
+    box-sizing: border-box;
+}
+
+/* ---------- BACKGROUND MATRIX CANVAS ---------- */
+#effectsCanvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 0;
+    pointer-events: none;
+}
+
+/* ---------- GLOBAL HEADER ---------- */
+.global-header {
+    position: fixed;
+    top: 0;
+    width: 100%;
+    text-align: center;
+    padding: 20px 0;
+    background: linear-gradient(to bottom, var(--bg-dark) 80%, transparent);
+    z-index: 10;
+}
+
+.title {
+    font-size: 38px;
+    font-weight: 900;
+    letter-spacing: 4px;
+    background: linear-gradient(90deg, #38bdf8, #a855f7, #38bdf8);
+    background-size: 200% auto;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: drift 4s linear infinite;
+    margin: 0;
+}
+
+@keyframes drift {
+    to { background-position: 200% center; }
+}
+
+.subtitle {
+    font-size: 13px;
+    margin: 6px 0 0 0;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+/* ---------- GAME HUB CONTAINER ---------- */
+.container {
+    position: relative;
+    z-index: 2;
+    width: 90%;
+    max-width: 420px;
+    background: var(--card-bg);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    padding: 40px;
+    border-radius: 20px;
+    text-align: center;
+    border: 1px solid var(--border-color);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+    min-height: 460px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    transition: all 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+.container.game-active {
+    max-width: 540px;
+    min-height: 560px;
+    border-color: rgba(56, 189, 248, 0.3);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6), 0 0 30px rgba(56, 189, 248, 0.1);
+}
+
+.hidden { display: none !important; }
+
+/* ERROR SHAKE EFFECT */
+.shake {
+    animation: layoutShake 0.4s ease-in-out;
+}
+@keyframes layoutShake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-8px); }
+    40%, 80% { transform: translateX(8px); }
+}
+
+h3 {
+    font-size: 22px;
+    margin-top: 0;
+    margin-bottom: 24px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+}
+
+/* ---------- BUTTON INTERACTIVES ---------- */
+button {
+    padding: 12px 24px;
+    margin: 8px;
+    font-weight: 600;
+    font-size: 14px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.04);
+    color: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+button:hover {
+    background: rgba(255, 255, 255, 0.1);
+    transform: translateY(-2px);
+    border-color: rgba(255, 255, 255, 0.2);
+}
+
+button.primary {
+    background: linear-gradient(135deg, #38bdf8, #0284c7);
+    border: none;
+    box-shadow: 0 4px 12px rgba(2, 132, 199, 0.2);
+}
+button.primary:hover {
+    box-shadow: 0 6px 16px rgba(2, 132, 199, 0.4);
+    background: linear-gradient(135deg, #0ea5e9, #0369a1);
+}
+
+button.active {
+    background: var(--success);
+    border-color: var(--success);
+    box-shadow: 0 0 12px var(--success-glow);
+}
+
+/* ---------- DISPLAY SCREEN TRANSITIONS ---------- */
+.ready-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(8, 12, 20, 0.9);
+    backdrop-filter: blur(6px);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+}
+.ready-overlay.active { display: flex; }
+
+.ready-message {
+    font-size: 44px;
+    font-weight: 800;
+    letter-spacing: 2px;
+    color: white;
+    text-shadow: 0 0 20px var(--primary-glow);
+    animation: popUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+@keyframes popUp {
+    0% { transform: scale(0.6); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+/* ---------- GAMEPLAY MATRIX ---------- */
+.top-score {
+    font-size: 18px;
+    margin-bottom: 20px;
+    font-weight: 700;
+    color: #cbd5e1;
+}
+
+.equation {
+    font-size: 34px;
+    font-weight: 700;
+    margin: 25px 0;
+    font-family: monospace;
+    color: #f8fafc;
+}
+
+input {
+    padding: 12px 16px;
+    font-size: 18px;
+    width: 80%;
+    max-width: 260px;
+    margin-bottom: 20px;
+    background: rgba(8, 12, 20, 0.5);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    color: white;
+    text-align: center;
+    outline: none;
+    transition: all 0.3s ease;
+}
+input:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 12px var(--primary-glow);
+}
+
+.feedback {
+    margin-top: 10px;
+    font-size: 15px;
+    font-weight: 600;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.feedback.correct { color: var(--success); }
+.feedback.incorrect { color: var(--error); }
+
+.game-over-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(239, 68, 68, 0.15);
+    backdrop-filter: blur(8px);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 99;
+}
+.game-over-overlay.active { display: flex; }
+.game-over-text {
+    font-size: 64px;
+    font-weight: 900;
+    color: white;
+    text-shadow: 0 0 30px rgba(239, 68, 68, 0.5);
+}
+
+.timer-section {
+    margin-top: 30px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    justify-content: center;
+}
+.timer-display { font-size: 22px; font-weight: 700; color: var(--primary); font-family: monospace; }
+.timer-label { font-size: 13px; color: var(--text-muted); }
+.struggle-message { color: #fbbf24; font-size: 13px; margin-top: 15px; font-weight: 500; }
+
+/* ---------- CANVAS POWER MODULE BUTTONS ---------- */
+.powers-section {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 25px;
+    justify-content: center;
+}
+.powers-label {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+.powers-container { display: flex; gap: 16px; }
+.power-btn {
+    width: 72px;
+    height: 72px;
+    border-radius: 14px;
+    border: 1px solid rgba(56, 189, 248, 0.2);
+    background: rgba(15, 23, 42, 0.6);
+    cursor: pointer;
+    position: relative;
+    padding: 6px;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+.power-btn canvas {
+    width: 36px;
+    height: 36px;
+    margin-bottom: 4px;
+}
+.power-title {
+    font-size: 9px;
+    font-weight: 700;
+    text-transform: uppercase;
+    color: var(--primary);
+    letter-spacing: 0.5px;
+    white-space: nowrap;
+}
+.power-btn:hover:not(:disabled) {
+    background: rgba(56, 189, 248, 0.15);
+    border-color: var(--primary);
+    transform: translateY(-2px);
+    box-shadow: 0 0 12px var(--primary-glow);
+}
+.power-btn:disabled { opacity: 0.2; cursor: not-allowed; transform: none; }
+.power-btn.unavailable { border-color: var(--error) !important; }
+.power-btn.unavailable .power-title { color: var(--error); }
+
+.power-badge {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    width: 18px;
+    height: 18px;
+    background: #a855f7;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: 700;
+    border: 2px solid #0f172a;
+    color: white;
+}
+.power-restore-message {
+    position: absolute;
+    top: -20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #fbbf24;
+    color: #0f172a;
+    padding: 6px 14px;
+    border-radius: 15px;
+    font-weight: 700;
+    font-size: 12px;
+    z-index: 50;
+}
+
+/* ---------- HOW TO PLAY & RANK STYLING ---------- */
+.how-to-play-link {
+    margin-top: 20px;
+    color: var(--primary);
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 500;
+}
+#howToPlay { max-height: 70vh; overflow-y: auto; text-align: left; }
+.how-to-play-content h4 { color: var(--primary); margin-top: 15px; margin-bottom: 5px; }
+.how-to-play-content p { margin: 5px 0; font-size: 14px; color: #94a3b8; line-height: 1.4; }
+
+.ranks-list { display: grid; gap: 8px; margin-top: 15px; }
+.rank-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+}
+.rank-name { font-weight: 600; color: #f1f5f9; font-size: 14px; }
+.rank-requirement { color: var(--text-muted); font-size: 12px; margin-left: 5px; }
+
+.back-btn { width: 34px; height: 34px; border-radius: 50%; padding: 0; display: flex; align-items: center; justify-content: center; margin-bottom: 15px; }
+
+/* ---------- PURE CSS RANK ICON ENGINES ---------- */
+.rank-icon {
+    width: 24px;
+    height: 24px;
+    position: relative;
+    display: inline-block;
+    flex-shrink: 0;
+}
+
+/* Broken Math: Cross Slashing Box */
+.icon-broken {
+    border: 2px dashed #475569;
+    box-sizing: border-box;
+}
+.icon-broken::before {
+    content: ''; position: absolute; top: 10px; left: 1px; width: 18px; height: 2px; background: #475569; transform: rotate(45deg);
+}
+
+/* Know Math: Heavy Sturdy Solid Pillar Block */
+.icon-know {
+    background: #cd7f32;
+    clip-path: polygon(25% 0%, 75% 0%, 100% 100%, 0% 100%);
+}
+
+/* Basic Math: Perfect Geometric CSS Diamond Star */
+.icon-basic {
+    background: #cbd5e1;
+    transform: rotate(45deg) scale(0.7);
+    box-shadow: 0 0 8px #cbd5e1;
+}
+
+/* Abstract Math: Double Layer Gold Core Hexagon Shield */
+.icon-abstract {
+    background: #eab308;
+    clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+    box-shadow: 0 0 10px rgba(234, 179, 8, 0.6);
+}
+
+/* Mega Math: Pulsing Hyper Glowing Purple Node Ring */
+.icon-mega {
+    border: 2px solid #a855f7;
+    border-radius: 50%;
+    box-sizing: border-box;
+    animation: pulseRing 1.5s infinite ease-in-out;
+}
+.icon-mega::before {
+    content: ''; position: absolute; top: 5px; left: 5px; width: 10px; height: 10px; background: #a855f7; border-radius: 50%;
+}
+@keyframes pulseRing {
+    0% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0.7); }
+    70% { box-shadow: 0 0 0 6px rgba(168, 85, 247, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(168, 85, 247, 0); }
+}
+
+/* Super Math: High Poly Reflective Pure Cyan Diamond Prism */
+.icon-super {
+    background: linear-gradient(135deg, #06b6d4, #afeeee);
+    clip-path: polygon(50% 0%, 100% 35%, 50% 100%, 0% 35%);
+    animation: prismSpin 3s infinite linear;
+}
+@keyframes prismSpin {
+    0% { transform: rotateY(0deg); }
+    100% { transform: rotateY(360deg); }
+}
+
+/* Eternal Math: Dual Axis Spinning Radial Light Halo Orbit */
+.icon-eternal {
+    border: 2px solid #fff;
+    border-radius: 50%;
+    box-sizing: border-box;
+    box-shadow: 0 0 15px #fff, inset 0 0 10px #f43f5e;
+    animation: haloFloat 2s infinite ease-in-out;
+}
+@keyframes haloFloat {
+    0%, 100% { transform: translateY(0) scale(0.9); }
+    50% { transform: translateY(-3px) scale(1); }
+}
+
+/* Game Over Large Rank Banner Box Setup */
+.rank-display-card {
+    margin: 20px 0;
+    padding: 15px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+}
+.rank-display-card .rank-name { font-size: 18px; font-weight: 800; }
+.rank-display-card .rank-icon { width: 32px; height: 32px; }
+
+#finalScore { font-size: 32px; font-weight: 900; color: var(--primary); margin: 5px 0 20px 0; }
+</style>
+</head>
+
+<body>
+
+<!-- DYNAMIC GRAPHICS FX LAYER -->
+<canvas id="effectsCanvas"></canvas>
+
+<!-- GLOBAL HEADER -->
+<div class="global-header">
+    <div class="title">HEAD MATH</div>
+    <div class="subtitle">Train Your Brain</div>
+</div>
+
+<!-- OVERLAYS -->
+<div class="ready-overlay" id="readyOverlay">
+    <div class="ready-message">GET READY...</div>
+</div>
+
+<div class="game-over-overlay" id="gameOverOverlay">
+    <div class="game-over-text">GAME OVER!</div>
+</div>
+
+<div class="container" id="gameContainer">
+
+    <!-- SELECT MODE MAIN MENU -->
+    <div id="menu">
+        <h3>Select Mode</h3>
+        <button class="primary" onclick="selectMode('addition')">Addition</button>
+        <button class="primary" onclick="selectMode('subtraction')">Subtraction</button>
+        <div class="how-to-play-link" onclick="showHowToPlay()">How to Play?</div>
+    </div>
+
+    <!-- CHOOSE TERMS LAYOUT -->
+    <div id="termScreen" class="hidden">
+        <button class="back-btn" onclick="goMenu()">←</button>
+        <h3>Choose how many numbers to add:</h3>
+        <div style="display:flex; justify-content: center;">
+            <button id="t2" onclick="chooseTerms(2)">2 Numbers</button>
+            <button id="t3" onclick="chooseTerms(3)">3 Numbers</button>
+            <button id="t4" onclick="chooseTerms(4)">4 Numbers</button>
+        </div>
+    </div>
+
+    <!-- MAIN ACTIVE MATRIX -->
+    <div id="game" class="hidden">
+        <div class="power-restore-message hidden" id="restoreMessage">POWER EARNED!</div>
+        
+        <div class="powers-section">
+            <div class="powers-label">Power-ups:</div>
+            <div class="powers-container">
+                <button class="power-btn" id="calculatorBtn" onclick="usePowerCalculator()" title="Instantly solve this question">
+                    <canvas id="canvasSolve" width="64" height="64"></canvas>
+                    <div class="power-title">Solve</div>
+                    <div class="power-badge hidden" id="calcBadge">0</div>
+                </button>
+                <button class="power-btn" id="digitsBtn" onclick="usePowerDigits()" title="Drop a digit to make numbers smaller">
+                    <canvas id="canvasDrop" width="64" height="64"></canvas>
+                    <div class="power-title">Drop Digit</div>
+                    <div class="power-badge hidden" id="digitsBadge">0</div>
+                </button>
+                <button class="power-btn" id="boostBtn" onclick="usePowerBoost()" title="Get 5x points for the next correct answer">
+                    <canvas id="canvasBoost" width="64" height="64"></canvas>
+                    <div class="power-title">5x Score</div>
+                    <div class="power-badge hidden" id="boostBadge">0</div>
+                </button>
+            </div>
+        </div>
+        
+        <div class="game-content">
+            <div class="top-score" id="topScore">Score: 0</div>
+            <div class="equation" id="equation">---</div>
+            <input type="text" id="answer" placeholder="Your answer..." autocomplete="off">
+            <div>
+                <button class="primary" onclick="submitAnswer()" style="width: 80%; max-width: 260px;">Submit</button>
+            </div>
+            <div class="feedback" id="feedback"></div>
+            <div class="struggle-message" id="struggleMessage" style="display: none;">Stuck? Use a power-up!</div>
+            
+            <div class="timer-section">
+                <div class="timer-label">Time:</div>
+                <div class="timer-display" id="timerDisplay">00:00</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- SYSTEM DOCUMENTATION HOW TO PLAY -->
+    <div id="howToPlay" class="hidden">
+        <button class="back-btn" onclick="goMenu()">←</button>
+        <div class="how-to-play-content">
+            <h3>How to Play</h3>
+            <h4>Rules</h4>
+            <p>• Choose Addition or Subtraction mode.</p>
+            <p>• Answer correctly to score points. Getting an answer wrong ends the game!</p>
+            
+            <h4>Power-ups</h4>
+            <p>• <strong>Solve:</strong> Instantly answers the current question for you.</p>
+            <p>• <strong>Drop Digit:</strong> Deletes a random digit to make the numbers smaller.</p>
+            <p>• <strong>5x Score:</strong> Gives you 5x points for your next correct answer.</p>
+            
+            <h4>Ranks</h4>
+            <div class="ranks-list">
+                <div class="rank-item"><div class="rank-icon icon-broken"></div><div><span class="rank-name">Broken Math</span><span class="rank-requirement">(0+)</span></div></div>
+                <div class="rank-item"><div class="rank-icon icon-know"></div><div><span class="rank-name">Know Math</span><span class="rank-requirement">(5+)</span></div></div>
+                <div class="rank-item"><div class="rank-icon icon-basic"></div><div><span class="rank-name">Basic Math</span><span class="rank-requirement">(10+)</span></div></div>
+                <div class="rank-item"><div class="rank-icon icon-abstract"></div><div><span class="rank-name">Abstract Math</span><span class="rank-requirement">(20+)</span></div></div>
+                <div class="rank-item"><div class="rank-icon icon-mega"></div><div><span class="rank-name">Mega Math</span><span class="rank-requirement">(50+)</span></div></div>
+                <div class="rank-item"><div class="rank-icon icon-super"></div><div><span class="rank-name">Super Math</span><span class="rank-requirement">(100+)</span></div></div>
+                <div class="rank-item"><div class="rank-icon icon-eternal"></div><div><span class="rank-name">Eternal Math</span><span class="rank-requirement">(150+)</span></div></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TERMINATION / GAME OVER DISPLAY -->
+    <div id="gameOver" class="hidden">
+        <h3 style="color: var(--error); margin-bottom: 5px;">Game Over!</h3>
+        <p style="margin: 0; font-size: 13px; color: var(--text-muted);">Your Rank:</p>
+        <div id="rankBanner"></div>
+        
+        <p style="margin: 15px 0 0 0; font-size: 13px; color: var(--text-muted);">Final Score:</p>
+        <div id="finalScore">0</div>
+        <p id="finalTime" style="color: var(--primary); font-size: 13px; font-family: monospace; margin-bottom: 25px;"></p>
+        
+        <div style="display: flex; flex-direction: column; gap: 8px;">
+            <button class="primary" onclick="restartGame()">Play Again</button>
+            <button onclick="goMenu()">Main Menu</button>
+        </div>
+    </div>
+
+</div>
+
+<script>
+/* ---------- HIGH-PERFORMANCE RENDERING ENGINE ---------- */
+const canvas = document.getElementById('effectsCanvas');
+const ctx = canvas.getContext('2d');
+
+let particles = [];
+let matrixStreams = [];
+const mathElements = ['+', '-', '=', '?', '0', '1', 'X', 'Y'];
+
+function initCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+window.addEventListener('resize', initCanvas);
+initCanvas();
+
+class AmbientStream {
+    constructor() { this.reset(); this.y = Math.random() * canvas.height; }
+    reset() {
+        this.x = Math.random() * canvas.width;
+        this.y = -20;
+        this.size = Math.random() * 14 + 10;
+        this.speed = Math.random() * 1 + 0.5;
+        this.opacity = Math.random() * 0.12 + 0.03;
+        this.char = mathElements[Math.floor(Math.random() * mathElements.length)];
+    }
+    update() {
+        this.y += this.speed;
+        if (this.y > canvas.height + 20) this.reset();
+    }
+    draw() {
+        ctx.fillStyle = `rgba(56, 189, 248, ${this.opacity})`;
+        ctx.font = `${this.size}px monospace`;
+        ctx.fillText(this.char, this.x, this.y);
+    }
+}
+
+class ShockwaveParticle {
+    constructor(x, y) {
+        this.x = x;
+        this.y = y;
+        const angle = Math.random() * Math.PI * 2;
+        const speed = Math.random() * 5 + 3;
+        this.vx = Math.cos(angle) * speed;
+        this.vy = Math.sin(angle) * speed;
+        this.alpha = 1;
+        this.decay = Math.random() * 0.02 + 0.02;
+        this.size = Math.random() * 3 + 1;
+    }
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        this.alpha -= this.decay;
+    }
+    draw() {
+        ctx.save();
+        ctx.globalAlpha = this.alpha;
+        ctx.fillStyle = '#38bdf8';
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    }
+}
+
+for (let i = 0; i < 40; i++) matrixStreams.push(new AmbientStream());
+
+function triggerBlastEffect() {
+    const box = document.getElementById('gameContainer').getBoundingClientRect();
+    const cx = box.left + box.width / 2;
+    const cy = box.top + box.height / 3;
+    for (let i = 0; i < 35; i++) particles.push(new ShockwaveParticle(cx, cy));
+}
+
+function runEngine() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    matrixStreams.forEach(s => { s.update(); s.draw(); });
+    for (let i = particles.length - 1; i >= 0; i--) {
+        particles[i].update();
+        if (particles[i].alpha <= 0) particles.splice(i, 1);
+        else particles[i].draw();
+    }
+    requestAnimationFrame(runEngine);
+}
+runEngine();
+
+/* ---------- DYNAMIC GEOMETRIC CANVAS POWERUP GRAPHICS ---------- */
+function renderPowerupIcons(color = '#38bdf8') {
+    // 1. Solve Icon (Abstract Hexagon Shield - matching Abstract/Mega styles)
+    const cSolve = document.getElementById('canvasSolve');
+    if (cSolve) {
+        const sCtx = cSolve.getContext('2d');
+        sCtx.clearRect(0, 0, 64, 64);
+        sCtx.strokeStyle = color;
+        sCtx.lineWidth = 3;
+        sCtx.lineJoin = 'round';
+        sCtx.shadowBlur = 6;
+        sCtx.shadowColor = color;
+        
+        sCtx.beginPath();
+        for (let i = 0; i < 6; i++) {
+            let angle = (i * Math.PI) / 3 - Math.PI / 2;
+            let x = 32 + 20 * Math.cos(angle);
+            let y = 32 + 20 * Math.sin(angle);
+            if (i === 0) sCtx.moveTo(x, y); else sCtx.lineTo(x, y);
+        }
+        sCtx.closePath();
+        sCtx.stroke();
+        
+        sCtx.beginPath();
+        sCtx.arc(32, 32, 6, 0, Math.PI * 2);
+        sCtx.fillStyle = color;
+        sCtx.fill();
+    }
+
+    // 2. Drop Digit Icon (Sharp Inverted Poly Prism - matching Super style)
+    const cDrop = document.getElementById('canvasDrop');
+    if (cDrop) {
+        const dCtx = cDrop.getContext('2d');
+        dCtx.clearRect(0, 0, 64, 64);
+        dCtx.strokeStyle = color;
+        dCtx.lineWidth = 3;
+        dCtx.lineJoin = 'round';
+        dCtx.shadowBlur = 6;
+        dCtx.shadowColor = color;
+
+        dCtx.beginPath();
+        dCtx.moveTo(32, 52);
+        dCtx.lineTo(12, 18);
+        dCtx.lineTo(52, 18);
+        dCtx.closePath();
+        dCtx.stroke();
+        
+        dCtx.beginPath();
+        dCtx.moveTo(32, 18);
+        dCtx.lineTo(32, 52);
+        dCtx.stroke();
+    }
+
+    // 3. 5x Score Icon (Pulsing Diamond Crystal Core - matching Basic/Eternal style)
+    const cBoost = document.getElementById('canvasBoost');
+    if (cBoost) {
+        const bCtx = cBoost.getContext('2d');
+        bCtx.clearRect(0, 0, 64, 64);
+        bCtx.strokeStyle = color;
+        bCtx.lineWidth = 3;
+        bCtx.lineJoin = 'round';
+        bCtx.shadowBlur = 6;
+        bCtx.shadowColor = color;
+
+        bCtx.beginPath();
+        bCtx.moveTo(32, 10);
+        bCtx.lineTo(54, 32);
+        bCtx.lineTo(32, 54);
+        bCtx.lineTo(10, 32);
+        bCtx.closePath();
+        bCtx.stroke();
+        
+        bCtx.beginPath();
+        bCtx.moveTo(32, 18);
+        bCtx.lineTo(46, 32);
+        bCtx.lineTo(32, 46);
+        bCtx.lineTo(18, 32);
+        bCtx.closePath();
+        bCtx.stroke();
+    }
+}
+renderPowerupIcons();
+
+/* ---------- GAMEPLAY LOGIC ---------- */
+let mode = "";
+let terms = 2;
+let score = 0;
+let correctAnswer = 0;
+let usedCalculator = false;
+let usedDigits = false;
+let usedBoost = false;
+let restoredCalculator = 0;
+let restoredDigits = 0;
+let restoredBoost = 0;
+let correctAnswerCount = 0;
+let powerUsedThisQuestion = false;
+let boostActive = false;
+let currentNumbers = [];
+let gameStartTime = 0;
+let questionStartTime = 0;
+let timerInterval = null;
+let nudgeTimeout = null;
+
+/* ---------- SOUND EFFECTS (procedural, no audio files) ---------- */
+let audioCtx = null;
+function getAudioCtx() {
+    if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    return audioCtx;
+}
+
+function playTone(freq, startTime, duration, type, peakGain) {
+    const ctx = getAudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, startTime);
+    gain.gain.setValueAtTime(0, startTime);
+    gain.gain.linearRampToValueAtTime(peakGain, startTime + 0.015);
+    gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(startTime);
+    osc.stop(startTime + duration + 0.05);
+}
+
+function playCorrectSound() {
+    const ctx = getAudioCtx();
+    const now = ctx.currentTime;
+    // Bright ascending two-note chime
+    playTone(880, now, 0.14, "sine", 0.2);
+    playTone(1318.5, now + 0.09, 0.22, "sine", 0.2);
+}
+
+function playIncorrectSound() {
+    const ctx = getAudioCtx();
+    const now = ctx.currentTime;
+    // Low descending buzz
+    playTone(180, now, 0.28, "sawtooth", 0.15);
+    playTone(110, now + 0.1, 0.32, "sawtooth", 0.15);
+}
+
+function weightedNumber() {
+    let r = Math.random();
+    if (r < 0.8) return Math.floor(Math.random() * 90) + 10;
+    if (r < 0.95) return Math.floor(Math.random() * 900) + 100;
+    return Math.floor(Math.random() * 9000) + 1000;
+}
+
+function selectMode(m) {
+    mode = m;
+    if (m === "addition") {
+        menu.classList.add("hidden");
+        termScreen.classList.remove("hidden");
+    } else {
+        showReadyAnimation();
+    }
+}
+
+function chooseTerms(n) {
+    terms = n;
+    document.querySelectorAll("#termScreen button").forEach(b => b.classList.remove("active"));
+    document.getElementById("t" + n).classList.add("active");
+    setTimeout(showReadyAnimation, 200);
+}
+
+function showReadyAnimation() {
+    menu.classList.add("hidden");
+    termScreen.classList.add("hidden");
+    readyOverlay.classList.add("active");
+    setTimeout(() => {
+        readyOverlay.classList.remove("active");
+        startGame();
+    }, 1500);
+}
+
+function startGame() {
+    score = 0;
+    usedCalculator = false;
+    usedDigits = false;
+    usedBoost = false;
+    restoredCalculator = 0;
+    restoredDigits = 0;
+    restoredBoost = 0;
+    correctAnswerCount = 0;
+    powerUsedThisQuestion = false;
+    boostActive = false;
+    gameStartTime = Date.now();
+
+    menu.classList.add("hidden");
+    termScreen.classList.add("hidden");
+    gameOver.classList.add("hidden");
+    game.classList.remove("hidden");
+    
+    document.getElementById("gameContainer").classList.add("game-active");
+
+    enableAllPowers();
+    renderPowerupIcons('#38bdf8');
+    answer.disabled = false;
+    document.getElementById("feedback").textContent = "";
+    document.getElementById("struggleMessage").style.display = "none";
+    updateScore();
+    updatePowerBadges();
+    generateEquation();
+}
+
+function generateEquation() {
+    let text = "";
+
+    if (mode === "addition") {
+        let nums = [];
+        for (let i = 0; i < terms; i++) nums.push(weightedNumber());
+        currentNumbers = [...nums];
+        correctAnswer = nums.reduce((a, b) => a + b, 0);
+        text = nums.join(" + ") + " = ?";
+    } else if (mode === "subtraction") {
+        let a = Math.floor(Math.random() * 9999) + 1;
+        let b = Math.floor(Math.random() * 9999) + 1;
+        let big = Math.max(a, b), small = Math.min(a, b);
+        currentNumbers = [big, small];
+        correctAnswer = big - small;
+        text = `${big} - ${small} = ?`;
+    }
+
+    equation.textContent = text;
+    answer.value = "";
+    answer.focus();
+    
+    powerUsedThisQuestion = false;
+    enableAllPowers();
+    startQuestionTimer();
+}
+
+function startQuestionTimer() {
+    if (timerInterval) clearInterval(timerInterval);
+    document.getElementById("struggleMessage").style.display = "none";
+    questionStartTime = Date.now();
+    
+    timerInterval = setInterval(() => {
+        let elapsedSeconds = Math.floor((Date.now() - gameStartTime) / 1000);
+        let minutes = Math.floor(elapsedSeconds / 60);
+        let seconds = elapsedSeconds % 60;
+        document.getElementById("timerDisplay").textContent = 
+            String(minutes).padStart(2, '0') + ":" + String(seconds).padStart(2, '0');
+        
+        let questionTime = Math.floor((Date.now() - questionStartTime) / 1000);
+        if (questionTime >= 15 && !game.classList.contains("hidden")) {
+            document.getElementById("struggleMessage").style.display = "block";
+        }
+    }, 200);
+}
+
+function stopQuestionTimer() {
+    if (timerInterval) { clearInterval(timerInterval); timerInterval = null; }
+}
+
+function getTotalGameTime() {
+    let elapsedSeconds = Math.floor((Date.now() - gameStartTime) / 1000);
+    let minutes = Math.floor(elapsedSeconds / 60);
+    let seconds = elapsedSeconds % 60;
+    return String(minutes).padStart(2, '0') + ":" + String(seconds).padStart(2, '0');
+}
+
+function submitAnswer() {
+    let val = answer.value.trim();
+    if (val === "") return showNudgeMessage();
+    if (!/^-?\d+$/.test(val)) return showIncorrectFeedback();
+
+    if (parseInt(val) === correctAnswer) {
+        triggerBlastEffect();
+        if (boostActive) { score += 5; boostActive = false; } 
+        else { score++; }
+        correctAnswerCount++;
+        updateScore();
+        checkPowerRestoration();
+        showCorrectFeedback();
+        setTimeout(generateEquation, 1000);
+    } else {
+        showIncorrectFeedback();
+    }
+}
+
+function showCorrectFeedback() {
+    stopQuestionTimer();
+    playCorrectSound();
+    const feedbackEl = document.getElementById("feedback");
+    feedbackEl.textContent = "Correct!";
+    feedbackEl.className = "feedback correct";
+    answer.disabled = true;
+    setTimeout(() => {
+        answer.disabled = false;
+        answer.value = "";
+        feedbackEl.textContent = "";
+    }, 1000);
+}
+
+function showIncorrectFeedback() {
+    stopQuestionTimer();
+    playIncorrectSound();
+    document.getElementById("gameContainer").classList.add("shake");
+    const feedbackEl = document.getElementById("feedback");
+    feedbackEl.textContent = "Wrong Answer!";
+    feedbackEl.className = "feedback incorrect";
+    answer.disabled = true;
+    setTimeout(() => {
+        document.getElementById("gameContainer").classList.remove("shake");
+        endGame();
+    }, 1200);
+}
+
+function showNudgeMessage() {
+    if (nudgeTimeout) clearTimeout(nudgeTimeout);
+    const feedbackEl = document.getElementById("feedback");
+    feedbackEl.textContent = "Please enter a number!";
+    feedbackEl.className = "feedback incorrect";
+    answer.focus();
+    nudgeTimeout = setTimeout(() => { feedbackEl.textContent = ""; }, 3000);
+}
+
+function updateScore() { topScore.textContent = "Score: " + score; }
+
+function checkPowerRestoration() {
+    if (correctAnswerCount > 0 && correctAnswerCount % 5 === 0) {
+        let randomPower = Math.floor(Math.random() * 3);
+        if (randomPower === 0) {
+            if (usedCalculator) { usedCalculator = false; document.getElementById("calculatorBtn").disabled = false; } 
+            else { restoredCalculator++; }
+        } else if (randomPower === 1) {
+            if (usedDigits) { usedDigits = false; document.getElementById("digitsBtn").disabled = false; } 
+            else { restoredDigits++; }
+        } else {
+            if (usedBoost) { usedBoost = false; document.getElementById("boostBtn").disabled = false; } 
+            else { restoredBoost++; }
+        }
+        updatePowerBadges();
+        showRestoreMessage();
+    }
+}
+
+function updatePowerBadges() {
+    let calcCount = (usedCalculator ? 0 : 1) + restoredCalculator;
+    let digitsCount = (usedDigits ? 0 : 1) + restoredDigits;
+    let boostCount = (usedBoost ? 0 : 1) + restoredBoost;
+    
+    let calcBadge = document.getElementById("calcBadge");
+    let digitsBadge = document.getElementById("digitsBadge");
+    let boostBadge = document.getElementById("boostBadge");
+    
+    if (calcCount > 1) { calcBadge.textContent = calcCount; calcBadge.classList.remove("hidden"); } else { calcBadge.classList.add("hidden"); }
+    if (digitsCount > 1) { digitsBadge.textContent = digitsCount; digitsBadge.classList.remove("hidden"); } else { digitsBadge.classList.add("hidden"); }
+    if (boostCount > 1) { boostBadge.textContent = boostCount; boostBadge.classList.remove("hidden"); } else { boostBadge.classList.add("hidden"); }
+}
+
+function showRestoreMessage() {
+    let restoreMsg = document.getElementById("restoreMessage");
+    restoreMsg.classList.remove("hidden");
+    setTimeout(() => { restoreMsg.classList.add("hidden"); }, 2000);
+}
+
+function usePowerCalculator() {
+    if (powerUsedThisQuestion) return;
+    if (usedCalculator && restoredCalculator <= 0) return;
+    
+    powerUsedThisQuestion = true;
+    disableOtherPowers();
+    
+    if (restoredCalculator > 0) { restoredCalculator--; } 
+    else { usedCalculator = true; document.getElementById("calculatorBtn").disabled = true; }
+    
+    answer.value = correctAnswer;
+    answer.disabled = true;
+    triggerBlastEffect();
+    showCorrectFeedback();
+    
+    setTimeout(() => {
+        answer.disabled = false;
+        answer.value = "";
+        document.getElementById("feedback").textContent = "";
+        score++;
+        updateScore();
+        updatePowerBadges();
+        generateEquation();
+    }, 1000);
+}
+
+function usePowerDigits() {
+    if (powerUsedThisQuestion) return;
+    if (usedDigits && restoredDigits <= 0) return;
+    
+    powerUsedThisQuestion = true;
+    disableOtherPowers();
+    
+    if (restoredDigits > 0) { restoredDigits--; } 
+    else { usedDigits = true; document.getElementById("digitsBtn").disabled = true; }
+
+    if (mode === "addition") {
+        let multiDigitIndices = [];
+        currentNumbers.forEach((num, idx) => { if (num.toString().length >= 2) multiDigitIndices.push(idx); });
+        if (multiDigitIndices.length === 0) return;
+
+        let targetIdx = multiDigitIndices[Math.floor(Math.random() * multiDigitIndices.length)];
+        let targetNum = currentNumbers[targetIdx].toString();
+        let digitPos = Math.floor(Math.random() * targetNum.length);
+        let newStr = targetNum.slice(0, digitPos) + targetNum.slice(digitPos + 1);
+
+        if (newStr === "") newStr = "0";
+        currentNumbers[targetIdx] = parseInt(newStr);
+        correctAnswer = currentNumbers.reduce((a, b) => a + b, 0);
+    } else if (mode === "subtraction") {
+        let second = currentNumbers[1].toString();
+        if (second.length < 2) return;
+
+        let digitPos = Math.floor(Math.random() * second.length);
+        let newStr = second.slice(0, digitPos) + second.slice(digitPos + 1);
+        if (newStr === "") newStr = "0";
+
+        currentNumbers[1] = parseInt(newStr);
+        correctAnswer = currentNumbers[0] - currentNumbers[1];
+    }
+
+    let text = (mode === "addition") ? currentNumbers.join(" + ") + " = ?" : `${currentNumbers[0]} - ${currentNumbers[1]} = ?`;
+    document.getElementById("equation").textContent = text;
+    updatePowerBadges();
+}
+
+function usePowerBoost() {
+    if (powerUsedThisQuestion) return;
+    if (usedBoost && restoredBoost <= 0) return;
+    
+    powerUsedThisQuestion = true;
+    disableOtherPowers();
+    
+    if (restoredBoost > 0) { restoredBoost--; } 
+    else { usedBoost = true; document.getElementById("boostBtn").disabled = true; }
+    
+    boostActive = true;
+    updatePowerBadges();
+}
+
+function disableOtherPowers() {
+    document.querySelectorAll(".power-btn").forEach(btn => { btn.classList.add("unavailable"); btn.disabled = true; });
+    renderPowerupIcons('#ef4444');
+}
+
+function enableAllPowers() {
+    document.querySelectorAll(".power-btn").forEach(btn => btn.classList.remove("unavailable"));
+    if (!(usedCalculator && restoredCalculator <= 0)) document.getElementById("calculatorBtn").disabled = false;
+    if (!(usedDigits && restoredDigits <= 0)) document.getElementById("digitsBtn").disabled = false;
+    if (!(usedBoost && restoredBoost <= 0)) document.getElementById("boostBtn").disabled = false;
+    renderPowerupIcons('#38bdf8');
+}
+
+function getRank(s) {
+    if (s >= 150) return ["Eternal Math", "icon-eternal"];
+    if (s >= 100) return ["Super Math", "icon-super"];
+    if (s >= 50) return ["Mega Math", "icon-mega"];
+    if (s >= 20) return ["Abstract Math", "icon-abstract"];
+    if (s >= 10) return ["Basic Math", "icon-basic"];
+    if (s >= 5) return ["Know Math", "icon-know"];
+    return ["Broken Math", "icon-broken"];
+}
+
+function endGame() {
+    stopQuestionTimer();
+    if (nudgeTimeout) clearTimeout(nudgeTimeout);
+    answer.disabled = true;
+    gameOverOverlay.classList.add("active");
+    const totalTime = getTotalGameTime();
+    
+    setTimeout(() => {
+        game.classList.add("hidden");
+        gameOverOverlay.classList.remove("active");
+        gameOver.classList.remove("hidden");
+        document.getElementById("gameContainer").classList.remove("game-active");
+        
+        finalScore.textContent = score;
+        document.getElementById("finalTime").textContent = "Time Played: " + totalTime;
+        let [name, iconClass] = getRank(score);
+        rankBanner.innerHTML = `
+            <div class="rank-display-card">
+                <div class="rank-icon ${iconClass}"></div>
+                <div class="rank-name">${name}</div>
+            </div>`;
+    }, 1200);
+}
+
+function restartGame() {
+    menu.classList.add("hidden");
+    termScreen.classList.add("hidden");
+    gameOver.classList.add("hidden");
+    if (mode === "addition") {
+        terms = 2;
+        termScreen.classList.remove("hidden");
+        document.querySelectorAll("#termScreen button").forEach(b => b.classList.remove("active"));
+        document.getElementById("t2").classList.add("active");
+    } else {
+        startGame();
+    }
+}
+
+function goMenu() {
+    gameOver.classList.add("hidden");
+    menu.classList.remove("hidden");
+    howToPlay.classList.add("hidden");
+    termScreen.classList.add("hidden");
+    document.getElementById("gameContainer").classList.remove("game-active");
+    document.querySelectorAll("#termScreen button").forEach(b => b.classList.remove("active"));
+    terms = 2;
+    mode = "";
+}
+
+function showHowToPlay() { menu.classList.add("hidden"); howToPlay.classList.remove("hidden"); }
+
+document.addEventListener("keydown", e => {
+    if (e.key === "Enter" && !game.classList.contains("hidden")) submitAnswer();
+});
+</script>
+</body>
+</html>
