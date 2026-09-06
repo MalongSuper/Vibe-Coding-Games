@@ -1,4 +1,4 @@
-# Dynasty Defense - Overview
+# Dynasty Defense
 
 ### 1. What Is the Game?
 
