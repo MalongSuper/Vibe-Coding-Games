@@ -33,5 +33,6 @@ Three AI models are primarily used, each with a different role:
 * **DeepSeek**: Used to improve and clarify the user's prompt, as well as fix minor bugs and make small refinements.
 * **Claude**: Used to generate the complete game from scratch based on the improved prompt, including the HTML, CSS, JavaScript, Canvas, mechanics, and UI.
 * **Gemini**: Used to review Claude's generated code and fix major bugs or problems that prevent the game from working correctly.
+* **Visual Studio Code AI Agent**: Used as a last resort when token limits are reached on the other three AI models, or when quick but meaningful fixes are needed. Provides efficient debugging and refinement capabilities within the VS Code environment.
 
 This multi-AI approach makes it possible to rapidly turn game ideas into functional, self-contained browser games.
