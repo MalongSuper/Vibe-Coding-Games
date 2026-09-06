@@ -1,0 +1,1685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dynasty Defense: The Four Paths</title>
+  <style>
+    :root {
+      --bg-dark: #1a2f3d;
+      --gold: #c9a24b;
+      --red-dark: #8a2328;
+      --text-light: #e0e0e0;
+      --panel-bg: rgba(10, 6, 4, 0.85);
+      --hud-bg: rgba(20, 25, 30, 0.9);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+    body { background-color: var(--bg-dark); color: var(--text-light); overflow: hidden; height: 100vh; }
+
+    /* Screen Management */
+    .screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; flex-direction: column; }
+    .screen.active { display: flex; }
+    .hidden { display: none !important; }
+
+    /* Buttons */
+    .primary-btn {
+      background: var(--red-dark); color: var(--gold); border: 2px solid var(--gold); padding: 15px 40px;
+      font-size: 1.2rem; font-weight: bold; cursor: pointer; text-transform: uppercase;
+      transition: all 0.2s; box-shadow: 0 4px 0 var(--gold);
+    }
+    .primary-btn:hover { filter: brightness(1.2); transform: translateY(2px); box-shadow: 0 2px 0 var(--gold); }
+    .primary-btn.disabled { background: #333; color: #777; border-color: #555; box-shadow: 0 4px 0 #222; cursor: not-allowed; }
+    .secondary-btn { background: transparent; color: var(--text-light); border: 1px solid var(--text-light); padding: 8px 16px; cursor: pointer; }
+    
+    /* Top Left Forfeit Button */
+    .forfeit-btn {
+      position: absolute; top: 15px; left: 15px; z-index: 50;
+      background: transparent; border: 1px solid rgba(255,255,255,0.4); color: rgba(255,255,255,0.7);
+      padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 0.9rem; font-weight: bold; transition: all 0.2s;
+    }
+    .forfeit-btn:hover { background: #d32f2f; color: white; border-color: #d32f2f; }
+
+    /* Procedural CSS Flag for the HUD */
+    .css-flag { display: inline-block; position: relative; width: 20px; height: 24px; margin-right: 12px; }
+    .css-flag::before { content: ''; position: absolute; left: 0; bottom: 0; width: 3px; height: 28px; background-color: var(--gold); }
+    .css-flag::after { content: ''; position: absolute; left: 3px; top: 0px; width: 0; height: 0; border-top: 8px solid transparent; border-bottom: 8px solid transparent; border-left: 16px solid var(--red-dark); }
+
+    /* Phase 1: Main Menu */
+    #hero-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1; }
+    .menu-content {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(15, 23, 30, 0.85); z-index: 2; display: flex; flex-direction: column;
+      justify-content: center; align-items: center; text-align: center;
+    }
+    .game-title { font-size: 5rem; color: var(--gold); text-transform: uppercase; letter-spacing: 6px; text-shadow: 0 4px 10px rgba(0,0,0,0.9); margin-bottom: 2rem; }
+    .tutorial-section { width: 90%; max-width: 650px; margin-top: 2rem; background: var(--panel-bg); border: 1px solid var(--gold); padding: 20px; border-radius: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.7); }
+    .tutorial-section h2 { color: var(--gold); border-bottom: 1px solid var(--gold); padding-bottom: 10px; margin-bottom: 15px; font-size: 1.5rem;}
+    .scroll-box { max-height: 150px; overflow-y: auto; font-size: 1rem; line-height: 1.5; padding-right: 10px; text-align: left; }
+    .scroll-box p { margin-bottom: 12px; }
+
+    /* Phase 2: Setup Screen */
+    #screen-setup { padding: 2rem; background: var(--bg-dark); z-index: 5; justify-content: center; }
+    .setup-container { max-width: 1100px; margin: 0 auto; width: 100%; }
+    .setup-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--gold); padding-bottom: 1rem; margin-bottom: 1.5rem; }
+    .setup-header h2 { color: var(--gold); font-size: 2rem; }
+    .setup-layout { display: flex; gap: 2rem; height: 55vh; }
+    .difficulty-panel { flex: 1; background: var(--panel-bg); padding: 1rem; border: 1px solid #444; }
+    .diff-options { display: flex; flex-direction: column; gap: 10px; margin-top: 15px;}
+    .diff-btn { padding: 15px; background: #2a2a2a; color: var(--text-light); border: 1px solid #555; cursor: pointer; text-align: left; font-size: 1.1rem; }
+    .diff-btn.active { background: var(--red-dark); border-color: var(--gold); color: var(--gold); }
+    .roster-panel { flex: 3; background: var(--panel-bg); padding: 1rem; border: 1px solid #444; display: flex; flex-direction: column; }
+    .roster-header { display: flex; justify-content: space-between; align-items: center; color: var(--gold); }
+    .instruction { font-size: 0.9rem; color: #aaa; margin: 10px 0; }
+    .hero-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 12px; overflow-y: auto; flex-grow: 1; padding: 5px; }
+    
+    .hero-card { background: #222; border: 2px solid #555; padding: 10px; text-align: center; cursor: pointer; user-select: none; border-radius: 6px; transition: all 0.2s;}
+    .hero-card.female { border-left: 4px solid #b37399; }
+    .hero-card.male { border-left: 4px solid #7399b3; }
+    .hero-card:hover { border-color: var(--gold); background: #333;}
+    .hero-card.selected { background: var(--red-dark); border-color: var(--gold); }
+    .hero-avatar { width: 100%; height: 60px; display: block; margin-bottom: 5px; background: transparent;}
+
+    .setup-footer { margin-top: 1.5rem; display: flex; justify-content: flex-end; }
+
+    /* Phase 3-5: Gameplay Screen */
+    #game-canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; display: block; background: #111a22;}
+    .hud-overlay { position: absolute; top: 0; left: 0; width: 100%; z-index: 11; display: flex; justify-content: space-between; padding: 15px 30px 15px 120px; background: linear-gradient(to bottom, rgba(0,0,0,0.9), transparent); pointer-events: none;}
+    .hud-stat { font-size: 1.5rem; font-weight: bold; color: var(--gold); text-shadow: 1px 1px 3px #000; pointer-events: auto;}
+    #hud-sell-coin { transition: all 0.2s; user-select: none; cursor: pointer; }
+    #hud-sell-coin:hover { transform: scale(1.05); filter: brightness(1.2); }
+    
+    /* Action Panel (Bottom Right Square)
+       Sized responsively (not a fixed px box) so it can never grow into the
+       Tower Foundation Plot grid: the plot grid forms a "+" that reaches to
+       within ~132px of the vertical/horizontal center line on whichever arm
+       is longest, so this panel is capped well inside that margin using
+       vw/vh, with a px ceiling so it doesn't get oversized on huge monitors.
+       Verified by simulation against the real plot-layout algorithm across
+       viewport sizes from small partially-maximized windows up to 4K. */
+    .action-panel {
+      position: absolute; right: 15px; bottom: 15px;
+      width: min(300px, 24vw); max-height: min(180px, 17vh); min-width: 220px;
+      background: var(--panel-bg); border: 2px solid var(--gold); border-radius: 10px;
+      padding: 8px; display: flex; flex-direction: column; overflow-y: auto;
+      z-index: 12; box-shadow: 0 8px 25px rgba(0,0,0,.8);
+    }
+    #action-hint { color: #aaa; font-size: 0.72em; text-align: center; margin-bottom: 5px; min-height: 18px; display: flex; align-items: center; justify-content: center; }
+    
+    /* Tab System */
+    .tabs { display: flex; gap: 6px; margin-bottom: 8px; }
+    .tab-btn { flex: 1; background: #222; border: 2px solid #555; color: #aaa; padding: 5px; cursor: pointer; font-size: 0.82em; font-weight: bold; text-transform: uppercase; border-radius: 4px; transition: all 0.2s; }
+    .tab-btn:hover { background: #333; color: #fff; border-color: #888; }
+    .tab-btn.active { background: var(--red-dark); border-color: var(--gold); color: var(--gold); }
+    .tab-content { display: none; }
+    .tab-content.active { display: block; }
+
+    .action-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; }
+    
+    .unit-btn { background: #222; border: 2px solid #555; color: #fff; padding: 5px 3px; width: 100%; cursor: pointer; border-radius: 4px; display: flex; flex-direction: column; align-items: center; gap: 3px; transition: all 0.2s;}
+    .unit-btn:hover:not(:disabled) { border-color: var(--gold); background: #333;}
+    .unit-btn.active { border-color: #3498db; background: rgba(52, 152, 219, 0.2); box-shadow: 0 0 12px #3498db; }
+    .unit-btn:disabled { opacity: 0.3; cursor: not-allowed; filter: grayscale(1); }
+    .unit-cost { color: var(--gold); font-size: 0.68em; font-weight: bold;}
+    .unit-type { font-size: 0.7em; line-height: 1.1; text-transform: uppercase; letter-spacing: 0.5px; text-align: center; word-break: break-word;}
+    .hero-btn { border-color: var(--gold); background: rgba(201, 162, 75, 0.1); }
+    .hero-btn:hover:not(:disabled) { background: rgba(201, 162, 75, 0.3); }
+
+    /* CSS Wave Arrows Overlay */
+    #css-arrow-container { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 12; }
+    .css-arrow-wrapper { position: absolute; display: flex; flex-direction: column; align-items: center; justify-content: center; transform: translate(-50%, -50%); pointer-events: none; animation: pulse 1s infinite alternate;}
+    .arrow-group { display: flex; gap: 6px; align-items: center; justify-content: center; margin-bottom: 6px; }
+    
+    .css-arrow-shape { width: 0; height: 0; border-style: solid; }
+    .css-arrow-shape.right { border-width: 14px 0 14px 22px; border-color: transparent transparent transparent #ff4d4d; }
+    .css-arrow-shape.left { border-width: 14px 22px 14px 0; border-color: transparent #ff4d4d transparent transparent; }
+    .css-arrow-shape.down { border-width: 22px 14px 0 14px; border-color: #ff4d4d transparent transparent transparent; }
+    .css-arrow-shape.up { border-width: 0 14px 22px 14px; border-color: transparent transparent #ff4d4d transparent; }
+    
+    .css-arrow-shape.boss.right { border-left-color: #ff0000; }
+    .css-arrow-shape.boss.left { border-right-color: #ff0000; }
+    .css-arrow-shape.boss.down { border-top-color: #ff0000; }
+    .css-arrow-shape.boss.up { border-bottom-color: #ff0000; }
+
+    .css-arrow-label { background: rgba(20, 25, 30, 0.9); color: #fff; font-size: 14px; padding: 4px 8px; border: 1px solid #ff4d4d; border-radius: 4px; text-shadow: 1px 1px 2px #000; text-align: center; white-space: nowrap; font-weight: bold;}
+    .css-arrow-label.boss { border-color: #ff0000; color: #ff0000; }
+
+    @keyframes pulse { from { transform: translate(-50%, -50%) scale(0.95); } to { transform: translate(-50%, -50%) scale(1.05); } }
+
+    /* Shared Modal Styles */
+    .modal-overlay { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); z-index: 100; display: flex; justify-content: center; align-items: center;}
+    .modal-box { background: var(--panel-bg); border: 2px solid var(--gold); padding: 40px; text-align: center; border-radius: 8px; max-width: 500px; width: 90%; box-shadow: 0 10px 40px rgba(0,0,0,0.8);}
+    .modal-title { font-size: 2.5rem; color: var(--gold); margin-bottom: 15px;}
+    .modal-text { font-size: 1.2rem; margin-bottom: 25px; line-height: 1.4;}
+  </style>
+</head>
+<body>
+
+  <div id="screen-main-menu" class="screen active">
+    <canvas id="hero-canvas"></canvas>
+    <div class="menu-content">
+      <h1 class="game-title">Dynasty Defense</h1>
+      <button id="btn-start-setup" class="primary-btn">Begin Campaign</button>
+      <div class="tutorial-section">
+        <h2>How to Play</h2>
+        <div class="scroll-box">
+          <p><strong>Objective:</strong> Defend the central Emperor's Palace from 4 converging paths of enemy stickmen forces. Your remaining Palace Lives are visible beneath the fortress.</p>
+          <p><strong>Strategic Deployment:</strong> When you have enough gold, units in the bottom right panel will illuminate. Select a configuration, then tap an available blue-highlighted plot to deploy.</p>
+          <p><strong>Leveling Up:</strong> Select the same unit type and place it onto a standard unit you have already deployed to level it up (up to Level 5) for increased stats! (Heroes cannot level up).</p>
+          <p><strong>Management:</strong> Click the "Demolish Coin" at the top right at any time to enter Sell Mode, then click any active red-highlighted unit to dismantle them.</p>
+          <p><strong>Standard Units (20G - 100G):</strong> Melee (Fist), Blade (Fast), Archer (Long Range), Magic (High DMG), Mace (Slow/Heavy), Spear (Balanced).</p>
+          <p><strong>Heroes (150G):</strong> Advanced commanders featuring dynamic battle configurations. Only one of each drafted hero can be deployed simultaneously.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="screen-setup" class="screen hidden">
+    <div class="setup-container">
+      <div class="setup-header">
+        <h2>War Council</h2>
+        <button id="btn-back-menu" class="secondary-btn">Back to Title</button>
+      </div>
+      <div class="setup-layout">
+        <div class="difficulty-panel">
+          <h3>Select Difficulty</h3>
+          <div class="diff-options">
+            <button class="diff-btn" data-diff="Easy" data-flags="15">Easy (15 Flags)</button>
+            <button class="diff-btn active" data-diff="Medium" data-flags="20">Medium (20 Flags)</button>
+            <button class="diff-btn" data-diff="Hard" data-flags="30">Hard (30 Flags)</button>
+          </div>
+        </div>
+        <div class="roster-panel">
+          <div class="roster-header">
+            <h3>Draft Heroes</h3>
+            <span id="hero-count-display">0 / 6 Selected</span>
+          </div>
+          <p class="instruction">Select EXACTLY 6 heroes to deploy into battle.</p>
+          <div id="hero-grid" class="hero-grid"></div>
+        </div>
+      </div>
+      <div class="setup-footer">
+        <button id="btn-start-game" class="primary-btn disabled" disabled>Enter the Battlefield</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="screen-gameplay" class="screen hidden">
+    <button id="btn-forfeit" class="forfeit-btn">Forfeit</button>
+    <canvas id="game-canvas"></canvas>
+    
+    <div id="css-arrow-container"></div>
+    
+    <div class="hud-overlay">
+      <div class="hud-stat" id="hud-gold">Gold: 500</div>
+      <div class="hud-stat" style="display:flex; align-items:center;">
+        <span class="css-flag"></span>
+        <span id="hud-wave">Flag: 1 / 20</span>
+      </div>
+      <div class="hud-stat" id="hud-sell-coin" title="Remove Units">🪙 Demolish Mode</div>
+    </div>
+
+    <div class="action-panel">
+      <div id="action-hint">Select a unit configuration below to build.</div>
+      
+      <div class="tabs">
+        <button class="tab-btn active" id="tab-standard">Soldiers</button>
+        <button class="tab-btn" id="tab-heroes">Heroes</button>
+      </div>
+      
+      <div id="content-standard" class="tab-content active">
+        <div class="action-grid" id="standard-unit-row">
+          <button class="unit-btn" data-type="Melee" data-is-hero="false"><span class="unit-type">Melee</span><span class="unit-cost">20 G</span></button>
+          <button class="unit-btn" data-type="Blade" data-is-hero="false"><span class="unit-type">Blade</span><span class="unit-cost">30 G</span></button>
+          <button class="unit-btn" data-type="Archer" data-is-hero="false"><span class="unit-type">Archer</span><span class="unit-cost">40 G</span></button>
+          <button class="unit-btn" data-type="Mace" data-is-hero="false"><span class="unit-type">Mace</span><span class="unit-cost">50 G</span></button>
+          <button class="unit-btn" data-type="Spear" data-is-hero="false"><span class="unit-type">Spear</span><span class="unit-cost">60 G</span></button>
+          <button class="unit-btn" data-type="Magic" data-is-hero="false"><span class="unit-type">Magic</span><span class="unit-cost">100 G</span></button>
+        </div>
+      </div>
+
+      <div id="content-heroes" class="tab-content">
+        <div class="action-grid" id="hero-unit-row"></div>
+      </div>
+    </div>
+
+    <div id="game-modal" class="modal-overlay hidden">
+      <div class="modal-box">
+        <h2 id="modal-title" class="modal-title">Victory!</h2>
+        <p id="modal-text" class="modal-text">The Emperor is safe.</p>
+        <button id="btn-restart" class="primary-btn">Return to Council</button>
+      </div>
+    </div>
+
+    <div id="forfeit-modal" class="modal-overlay hidden" style="z-index:150;">
+      <div class="modal-box">
+        <h2 class="modal-title" style="color: #e74c3c;">Abandon Operation?</h2>
+        <p class="modal-text">Are you sure you want to forfeit? You will automatically lose this defense.</p>
+        <div style="display: flex; justify-content: center; gap: 15px;">
+          <button id="btn-forfeit-cancel" class="secondary-btn">Resume</button>
+          <button id="btn-forfeit-confirm" class="primary-btn" style="background: #e74c3c; border-color: #e74c3c;">Quit to Menu</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    'use strict';
+
+    // --- PROCEDURAL AUDIO ENGINE (SFX) ---
+    // Every sound is synthesized live with the Web Audio API (oscillators + filtered noise) -
+    // no external audio files, matching the fully procedural nature of the visuals.
+    const SFX = (function () {
+      let ctx = null;
+      let masterGain = null;
+      let compressor = null;
+      let noiseBuffer = null;
+      let muted = false;
+      const lastPlayed = {}; // per-category throttle so simultaneous unit volleys don't overload the mixer
+
+      function ensureCtx() {
+        if (ctx) {
+          if (ctx.state === 'suspended') ctx.resume();
+          return ctx;
+        }
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return null;
+        ctx = new AC();
+        compressor = ctx.createDynamicsCompressor();
+        compressor.connect(ctx.destination);
+        masterGain = ctx.createGain();
+        masterGain.gain.value = muted ? 0 : 0.55;
+        masterGain.connect(compressor);
+        noiseBuffer = buildNoiseBuffer();
+        return ctx;
+      }
+
+      function buildNoiseBuffer() {
+        const size = ctx.sampleRate * 1;
+        const buffer = ctx.createBuffer(1, size, ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < size; i++) data[i] = Math.random() * 2 - 1;
+        return buffer;
+      }
+
+      function noiseSource() {
+        const src = ctx.createBufferSource();
+        src.buffer = noiseBuffer;
+        return src;
+      }
+
+      function throttled(key, minGapMs) {
+        const now = performance.now();
+        if (lastPlayed[key] && now - lastPlayed[key] < minGapMs) return true;
+        lastPlayed[key] = now;
+        return false;
+      }
+
+      function tone(t0, freqStart, freqEnd, duration, type, peak) {
+        const osc = ctx.createOscillator();
+        osc.type = type;
+        osc.frequency.setValueAtTime(Math.max(freqStart, 1), t0);
+        if (freqEnd !== undefined) osc.frequency.exponentialRampToValueAtTime(Math.max(freqEnd, 1), t0 + duration);
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(peak, t0);
+        g.gain.exponentialRampToValueAtTime(0.001, t0 + duration);
+        osc.connect(g); g.connect(masterGain);
+        osc.start(t0); osc.stop(t0 + duration + 0.02);
+        return osc;
+      }
+
+      function noiseBurst(t0, duration, peak, filterType, filterFreqStart, filterFreqEnd, Q) {
+        const src = noiseSource();
+        const filt = ctx.createBiquadFilter();
+        filt.type = filterType;
+        filt.frequency.setValueAtTime(filterFreqStart, t0);
+        if (filterFreqEnd !== undefined) filt.frequency.exponentialRampToValueAtTime(Math.max(filterFreqEnd, 1), t0 + duration);
+        if (Q !== undefined) filt.Q.value = Q;
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(peak, t0);
+        g.gain.exponentialRampToValueAtTime(0.001, t0 + duration);
+        src.connect(filt); filt.connect(g); g.connect(masterGain);
+        src.start(t0); src.stop(t0 + duration + 0.02);
+      }
+
+      // Type 1 - Sword & Spear: bright metallic clash
+      function playBladeClash() {
+        if (!ensureCtx() || throttled('blade', 45)) return;
+        const t0 = ctx.currentTime;
+        noiseBurst(t0, 0.12, 0.22, 'bandpass', 3200, 1800, 7);
+        tone(t0, 1900, 950, 0.12, 'triangle', 0.14);
+      }
+
+      // Type 2 - Mace & Melee (blunt weapons): heavy thud with a crunch of impact
+      function playBluntHit() {
+        if (!ensureCtx() || throttled('blunt', 45)) return;
+        const t0 = ctx.currentTime;
+        tone(t0, 170, 45, 0.18, 'sine', 0.4);
+        noiseBurst(t0, 0.09, 0.18, 'lowpass', 500, 250);
+      }
+
+      // Type 3 - Arrows: quick twang release plus a whoosh of air
+      function playArrowLoose() {
+        if (!ensureCtx() || throttled('arrow', 40)) return;
+        const t0 = ctx.currentTime;
+        tone(t0, 950, 220, 0.1, 'sawtooth', 0.18);
+        noiseBurst(t0, 0.07, 0.14, 'highpass', 2500, 4000);
+      }
+
+      // Type 4 - Mage: sparkling arcane chime over a rising undertone
+      function playMageCast() {
+        if (!ensureCtx() || throttled('mage', 60)) return;
+        const t0 = ctx.currentTime;
+        [1200, 1600, 2100].forEach((f, i) => tone(t0 + i * 0.035, f, undefined, 0.15, 'sine', 0.12));
+        tone(t0, 260, 640, 0.14, 'sawtooth', 0.1);
+      }
+
+      // An enemy has reached the palace territory - low impact + two-tone alarm
+      function playBreach() {
+        if (!ensureCtx()) return;
+        const t0 = ctx.currentTime;
+        tone(t0, 130, 40, 0.32, 'sine', 0.45);
+        [700, 480].forEach((f, i) => tone(t0 + 0.05 + i * 0.12, f, undefined, 0.1, 'square', 0.12));
+      }
+
+      // Mid-wave boss entrance: low horn swell + gong-like sweep
+      function playBossFanfare() {
+        if (!ensureCtx()) return;
+        const t0 = ctx.currentTime;
+        [80, 120].forEach(f => {
+          const osc = ctx.createOscillator();
+          osc.type = 'sawtooth';
+          osc.frequency.setValueAtTime(f, t0);
+          const filt = ctx.createBiquadFilter(); filt.type = 'lowpass'; filt.frequency.value = 600;
+          const g = ctx.createGain();
+          g.gain.setValueAtTime(0.0001, t0);
+          g.gain.linearRampToValueAtTime(0.32, t0 + 0.15);
+          g.gain.linearRampToValueAtTime(0.2, t0 + 0.55);
+          g.gain.exponentialRampToValueAtTime(0.001, t0 + 1.3);
+          osc.connect(filt); filt.connect(g); g.connect(masterGain);
+          osc.start(t0); osc.stop(t0 + 1.35);
+        });
+        noiseBurst(t0, 1.2, 0.35, 'bandpass', 2600, 200, 1.1);
+        tone(t0 + 0.05, 150, 90, 0.55, 'square', 0.25);
+      }
+
+      // Final-wave ultimate boss entrance: the fanfare plus a deep layered rumble
+      function playUltimateFanfare() {
+        playBossFanfare();
+        if (!ensureCtx()) return;
+        const t0 = ctx.currentTime + 0.1;
+        const osc = ctx.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(48, t0);
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(0.0001, t0);
+        g.gain.linearRampToValueAtTime(0.4, t0 + 0.3);
+        g.gain.exponentialRampToValueAtTime(0.001, t0 + 2.1);
+        osc.connect(g); g.connect(masterGain);
+        osc.start(t0); osc.stop(t0 + 2.15);
+      }
+
+      function playAttack(unitType) {
+        if (unitType === 'Blade' || unitType === 'Spear') playBladeClash();
+        else if (unitType === 'Mace' || unitType === 'Melee') playBluntHit();
+        else if (unitType === 'Archer') playArrowLoose();
+        else if (unitType === 'Magic') playMageCast();
+      }
+
+      function playBossSpawn(isUltimate) {
+        if (isUltimate) playUltimateFanfare(); else playBossFanfare();
+      }
+
+      function setMuted(m) {
+        muted = m;
+        if (masterGain) masterGain.gain.value = muted ? 0 : 0.55;
+      }
+      function toggleMuted() { setMuted(!muted); return muted; }
+
+      return { ensureCtx, playAttack, playBreach, playBossSpawn, toggleMuted, setMuted };
+    })();
+
+    // Unlock the AudioContext on the very first user gesture (autoplay policy requirement).
+    ['pointerdown', 'keydown'].forEach(evt => document.addEventListener(evt, () => SFX.ensureCtx(), { once: true }));
+
+    // --- ANIMATION CLASSES ---
+    (function (root) {
+      const NS = root.TD = root.TD || {};
+      class TitleAnimation {
+        constructor(canvas) {
+          this.canvas = canvas; this.ctx = canvas.getContext('2d');
+          this.width = 0; this.height = 0; this.running = false;
+          this.rafId = null; this.lastTimestamp = 0; this.elapsed = 0; 
+          this.riderX = -260; this.speedPxPerSec = 95;
+          this._onResize = this._onResize.bind(this); this._loop = this._loop.bind(this);
+        }
+        init() { window.addEventListener('resize', this._onResize); this._onResize(); }
+        start() {
+          if (this.running) return;
+          this.running = true; this.lastTimestamp = performance.now();
+          this.rafId = requestAnimationFrame(this._loop);
+        }
+        stop() {
+          this.running = false;
+          if (this.rafId !== null) { cancelAnimationFrame(this.rafId); this.rafId = null; }
+        }
+        _onResize() {
+          const dpr = window.devicePixelRatio || 1; const rect = this.canvas.getBoundingClientRect();
+          this.width = Math.max(1, Math.round(rect.width)); this.height = Math.max(1, Math.round(rect.height));
+          this.canvas.width = this.width * dpr; this.canvas.height = this.height * dpr;
+          this.ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+        }
+        _loop(timestamp) {
+          if (!this.running) return;
+          const dt = Math.min((timestamp - this.lastTimestamp) / 1000, 0.05);
+          this.lastTimestamp = timestamp; this.elapsed += dt;
+          this._update(dt); this._render();
+          this.rafId = requestAnimationFrame(this._loop);
+        }
+        _update(dt) {
+          this.riderX += this.speedPxPerSec * dt;
+          if (this.riderX > this.width + 260) this.riderX = -260;
+        }
+        _render() {
+          const ctx = this.ctx; ctx.clearRect(0, 0, this.width, this.height);
+          const groundY = this.height * 0.76; const scale = Math.min(1.2, Math.max(0.75, this.height / 380));
+          const gallopPhase = this.elapsed * 9; const bob = Math.abs(Math.sin(gallopPhase)) * 6 * scale;
+          this._drawGroundLine(ctx, groundY); this._drawDust(ctx, this.riderX, groundY, scale, gallopPhase);
+          this._drawShadow(ctx, this.riderX, groundY + 6, scale); this._drawHorseAndRider(ctx, this.riderX, groundY, scale, gallopPhase, bob);
+        }
+        _drawGroundLine(ctx, groundY) {
+          ctx.save(); ctx.strokeStyle = 'rgba(201, 162, 75, 0.28)'; ctx.lineWidth = 1.5;
+          ctx.beginPath(); ctx.moveTo(0, groundY + 34); ctx.lineTo(this.width, groundY + 34); ctx.stroke(); ctx.restore();
+        }
+        _drawShadow(ctx, x, y, scale) {
+          ctx.save(); ctx.translate(x, y); ctx.scale(scale, scale * 0.5); ctx.fillStyle = 'rgba(10, 6, 4, 0.4)';
+          ctx.beginPath(); ctx.ellipse(0, 0, 78, 16, 0, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+        }
+        _drawDust(ctx, x, groundY, scale, gallopPhase) {
+          ctx.save(); ctx.globalAlpha = 0.35; ctx.fillStyle = '#c9a24b';
+          for (let i = 0; i < 3; i++) {
+            const t = (gallopPhase * 0.6 + i * 1.4) % 6; const puffX = x - 70 * scale - t * 14 * scale;
+            const puffY = groundY + 30 - Math.sin(t) * 4; const r = (3 + i) * scale * (1 - t / 8);
+            if (r <= 0) continue;
+            ctx.beginPath(); ctx.ellipse(puffX, puffY, r, r * 0.6, 0, 0, Math.PI * 2); ctx.fill();
+          }
+          ctx.restore();
+        }
+        _drawLeg(ctx, hipX, hipY, phase, upperLen, lowerLen, swingAmp, color) {
+          const swing = Math.sin(phase) * swingAmp; const lift = Math.max(0, Math.sin(phase));
+          const upperAngle = Math.PI / 2 + swing; const kneeX = hipX + Math.cos(upperAngle) * upperLen; const kneeY = hipY + Math.sin(upperAngle) * upperLen;
+          const lowerAngle = upperAngle + lift * 1.0; const footX = kneeX + Math.cos(lowerAngle) * lowerLen; const footY = kneeY + Math.sin(lowerAngle) * lowerLen;
+          ctx.strokeStyle = color; ctx.lineWidth = 7; ctx.lineCap = 'round';
+          ctx.beginPath(); ctx.moveTo(hipX, hipY); ctx.lineTo(kneeX, kneeY); ctx.lineTo(footX, footY); ctx.stroke();
+        }
+        _drawHorseAndRider(ctx, x, y, scale, gallopPhase, bob) {
+          const bodyDark = '#2c1e16'; const bodyMid = '#43301f'; const maneColor = '#160f0b';
+          ctx.save(); ctx.translate(x, y - bob); ctx.scale(scale, scale);
+          this._drawLeg(ctx, -52, -20, gallopPhase + Math.PI, 32, 28, 0.85, bodyDark);
+          this._drawLeg(ctx, -34, -20, gallopPhase + Math.PI * 1.5, 32, 28, 0.85, bodyMid);
+          const tailWave = Math.sin(this.elapsed * 4.2) * 9;
+          ctx.strokeStyle = maneColor; ctx.lineWidth = 8; ctx.lineCap = 'round';
+          ctx.beginPath(); ctx.moveTo(-64, -66); ctx.quadraticCurveTo(-92, -48 + tailWave, -82, -6 + tailWave * 0.4); ctx.stroke();
+          ctx.fillStyle = bodyMid; ctx.beginPath(); ctx.ellipse(-8, -54, 60, 28, -0.04, 0, Math.PI * 2); ctx.fill();
+          this._drawLeg(ctx, 26, -30, gallopPhase, 32, 28, 0.85, bodyMid);
+          this._drawLeg(ctx, 40, -30, gallopPhase + Math.PI * 0.5, 32, 28, 0.85, bodyDark);
+          ctx.fillStyle = bodyMid; ctx.beginPath(); ctx.moveTo(36, -70); ctx.quadraticCurveTo(54, -106, 82, -104); ctx.quadraticCurveTo(94, -103, 90, -92); ctx.quadraticCurveTo(74, -86, 62, -66); ctx.closePath(); ctx.fill();
+          ctx.beginPath(); ctx.moveTo(82, -104); ctx.quadraticCurveTo(108, -100, 112, -90); ctx.quadraticCurveTo(100, -82, 86, -88); ctx.closePath(); ctx.fill();
+          ctx.beginPath(); ctx.moveTo(74, -104); ctx.lineTo(80, -118); ctx.lineTo(86, -103); ctx.closePath(); ctx.fill();
+          ctx.fillStyle = maneColor;
+          for (let i = 0; i < 5; i++) {
+            const t = i / 4; const mx = 62 - t * 28; const my = -68 - t * 32; const flutter = Math.sin(this.elapsed * 5 + i) * 2;
+            ctx.beginPath(); ctx.moveTo(mx, my); ctx.lineTo(mx - 9, my - 5 + flutter); ctx.lineTo(mx + 1, my + 7); ctx.closePath(); ctx.fill();
+          }
+          this._drawRider(ctx, gallopPhase); ctx.restore();
+        }
+        _drawRider(ctx, gallopPhase) {
+          const riderBob = Math.sin(gallopPhase) * 2; ctx.save(); ctx.translate(-4, -82 + riderBob);
+          ctx.fillStyle = '#8a2328'; ctx.beginPath(); ctx.moveTo(-15, 12); ctx.quadraticCurveTo(-19, -26, -5, -33); ctx.quadraticCurveTo(13, -33, 11, 8); ctx.quadraticCurveTo(0, 17, -15, 12); ctx.closePath(); ctx.fill();
+          ctx.strokeStyle = '#c9a24b'; ctx.lineWidth = 2; ctx.stroke();
+          ctx.strokeStyle = '#241a14'; ctx.lineWidth = 7; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(-6, 10); ctx.lineTo(2, 30); ctx.stroke();
+          ctx.fillStyle = '#e6c194'; ctx.beginPath(); ctx.arc(0, -43, 10, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = '#c9a24b'; ctx.beginPath(); ctx.moveTo(-11, -47); ctx.quadraticCurveTo(0, -66, 11, -47); ctx.quadraticCurveTo(0, -53, -11, -47); ctx.closePath(); ctx.fill();
+          const plumeWave = Math.sin(this.elapsed * 6) * 3; ctx.strokeStyle = '#8a2328'; ctx.lineWidth = 3; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(0, -64); ctx.quadraticCurveTo(6 + plumeWave, -78, 1, -90); ctx.stroke();
+          ctx.strokeStyle = '#e6c194'; ctx.lineWidth = 6; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(-8, -18); ctx.lineTo(-2, -34); ctx.stroke();
+          ctx.beginPath(); ctx.moveTo(9, -18); ctx.lineTo(28, -45); ctx.stroke();
+          this._drawSpear(ctx, 28, -45); ctx.restore();
+        }
+        _drawSpear(ctx, handX, handY) {
+          const angle = -1.15; const length = 148;
+          const tipX = handX + Math.cos(angle) * length; const tipY = handY + Math.sin(angle) * length;
+          const buttX = handX - Math.cos(angle) * 42; const buttY = handY - Math.sin(angle) * 42;
+          ctx.strokeStyle = '#5a3a22'; ctx.lineWidth = 4; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(buttX, buttY); ctx.lineTo(tipX, tipY); ctx.stroke();
+          const flagWave = Math.sin(this.elapsed * 8) * 9; const flagBaseX = handX + Math.cos(angle) * (length * 0.7); const flagBaseY = handY + Math.sin(angle) * (length * 0.7);
+          ctx.fillStyle = '#8a2328'; ctx.beginPath(); ctx.moveTo(flagBaseX, flagBaseY); ctx.lineTo(flagBaseX - 28, flagBaseY + 6 + flagWave); ctx.lineTo(flagBaseX - 3, flagBaseY + 17); ctx.closePath(); ctx.fill();
+          ctx.save(); ctx.translate(tipX, tipY); ctx.rotate(angle); ctx.fillStyle = '#d8d8d8'; ctx.beginPath(); ctx.moveTo(0, -6); ctx.lineTo(22, 0); ctx.lineTo(0, 6); ctx.closePath(); ctx.fill(); ctx.restore();
+        }
+      }
+      NS.TitleAnimation = TitleAnimation;
+    })(typeof window !== 'undefined' ? window : globalThis);
+
+    // --- PROCEDURAL STICKMAN DRAWING ---
+    const UnitDict = {
+      'Melee': { color: '#64b5f6', range: 70, damage: 12, fireRate: 0.6, type: 'melee', cost: 20 },
+      'Blade': { color: '#64b5f6', range: 85, damage: 14, fireRate: 0.5, type: 'melee', cost: 30 },
+      'Archer': { color: '#64b5f6', range: 190, damage: 9, fireRate: 0.7, type: 'projectile', cost: 40 },
+      'Mace': { color: '#64b5f6', range: 75, damage: 45, fireRate: 1.8, type: 'melee', cost: 50 },
+      'Spear': { color: '#64b5f6', range: 125, damage: 18, fireRate: 0.8, type: 'melee', cost: 60 },
+      'Magic': { color: '#64b5f6', range: 130, damage: 28, fireRate: 1.4, type: 'projectile', cost: 100 }
+    };
+
+    // Random final-boss colors for each playthrough (excludes red/blue team colors).
+    const FINAL_BOSS_COLOR_PALETTE = ['#2ecc71', '#f1c40f', '#e67e22', '#9b59b6', '#8e44ad', '#f39c12'];
+
+    function getNaturalBossColor() {
+      if (State.difficulty === 'Easy') return '#bdc3c7';
+      if (State.difficulty === 'Medium') return '#c9762a';
+      return '#9b59b6';
+    }
+
+    function rollFinalBossColor() {
+      const pool = [...FINAL_BOSS_COLOR_PALETTE, getNaturalBossColor()];
+      return pool[Math.floor(Math.random() * pool.length)];
+    }
+
+    function drawStickman(ctx, x, y, type, isHero, gender, isEnemy, seedTime, hasLongHair, bossColorOverride) {
+      ctx.save();
+      ctx.translate(x, y);
+
+      let color = isEnemy ? '#ff4d4d' : '#ffffff';
+      if (!isEnemy && !isHero) {
+        color = UnitDict[type].color; 
+      } else if (isHero && !isEnemy) {
+        color = '#c9a24b'; 
+      }
+      
+      // Ultimate bosses use one session color (rolled at game start).
+      if (type === 'Knight') color = bossColorOverride || '#bdc3c7';
+      if (type === 'Gladiator') color = bossColorOverride || '#c9762a';
+      if (type === 'Priestess') color = bossColorOverride || '#9b59b6';
+      if (type === 'MagicHand') color = '#8e24aa'; // Magical violet hand
+
+      ctx.strokeStyle = color;
+      ctx.fillStyle = color;
+      ctx.lineWidth = isHero ? 3 : 2;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
+
+      let cycle = (seedTime * 0.012);
+      let bob = isEnemy ? Math.abs(Math.sin(cycle * 1.5)) * 3 : Math.sin(cycle) * 1.5;
+
+      if (isHero && hasLongHair) {
+        ctx.strokeStyle = '#333';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.moveTo(0, -22 - bob);
+        ctx.quadraticCurveTo(8, -10 - bob, 5, 8 - bob);
+        ctx.stroke();
+        ctx.strokeStyle = color; 
+        ctx.lineWidth = isHero ? 3 : 2;
+      }
+
+      ctx.beginPath();
+      ctx.arc(0, -13 - bob, isHero ? 5.5 : 4, 0, Math.PI * 2);
+      ctx.fill();
+
+      if (isHero && !isEnemy) {
+        if (gender === 'female') {
+          ctx.beginPath();
+          ctx.arc(5, -16 - bob, 2.5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.beginPath();
+          ctx.moveTo(0, -9 - bob);
+          ctx.quadraticCurveTo(-6, -5 - bob, -5, 2 - bob);
+          ctx.stroke();
+        } else {
+          ctx.beginPath();
+          ctx.moveTo(-4, -18 - bob);
+          ctx.lineTo(4, -18 - bob);
+          ctx.lineTo(0, -23 - bob);
+          ctx.closePath();
+          ctx.fill();
+        }
+      }
+
+      ctx.beginPath();
+      ctx.moveTo(0, -9 - bob);
+      ctx.lineTo(0, 3);
+      ctx.stroke();
+
+      if (isHero && gender === 'female' && !isEnemy) {
+        ctx.beginPath();
+        ctx.moveTo(0, -2);
+        ctx.lineTo(-5, 7);
+        ctx.lineTo(5, 7);
+        ctx.closePath();
+        ctx.fill();
+      }
+
+      let swing = isEnemy ? Math.sin(cycle * 1.5) * 6 : 0;
+      ctx.beginPath();
+      ctx.moveTo(0, 3);
+      ctx.lineTo(-4 - swing, 13);
+      ctx.moveTo(0, 3);
+      ctx.lineTo(4 + swing, 13);
+      ctx.stroke();
+
+      ctx.beginPath();
+      if (type === 'Melee') {
+        ctx.moveTo(-3, -4 - bob); ctx.lineTo(6, -1 - bob); ctx.stroke();
+      } else if (type === 'Blade') {
+        ctx.moveTo(-3, -4 - bob); ctx.lineTo(6, -1 - bob); ctx.stroke();
+        ctx.strokeStyle = '#e0e0e0'; ctx.lineWidth = isHero ? 3.5 : 2;
+        ctx.beginPath(); ctx.moveTo(6, -1 - bob); ctx.lineTo(14, -8 - bob); ctx.stroke();
+      } else if (type === 'Archer') {
+        ctx.moveTo(-3, -4 - bob); ctx.lineTo(5, -4 - bob); ctx.stroke();
+        ctx.strokeStyle = '#a1887f';
+        ctx.beginPath(); ctx.arc(7, -4 - bob, 7, -Math.PI/2, Math.PI/2); ctx.stroke();
+      } else if (type === 'Magic') {
+        ctx.moveTo(-3, -4 - bob); ctx.lineTo(5, -6 - bob); ctx.stroke();
+        ctx.strokeStyle = '#9575cd';
+        ctx.beginPath(); ctx.moveTo(5, 7); ctx.lineTo(5, -14 - bob); ctx.stroke();
+        ctx.fillStyle = '#4fc3f7'; ctx.beginPath(); ctx.arc(5, -16 - bob, 2.5, 0, Math.PI*2); ctx.fill();
+      } else if (type === 'Mace') {
+        ctx.moveTo(-3, -4 - bob); ctx.lineTo(5, 2 - bob); ctx.stroke();
+        ctx.strokeStyle = '#9e9e9e';
+        ctx.beginPath(); ctx.moveTo(5, 2 - bob); ctx.lineTo(10, 6 - bob); ctx.stroke();
+        ctx.fillStyle = '#424242'; ctx.beginPath(); ctx.arc(10, 6 - bob, 4, 0, Math.PI*2); ctx.fill();
+      } else if (type === 'Spear') {
+        ctx.moveTo(-3, -4 - bob); ctx.lineTo(6, -4 - bob); ctx.stroke();
+        ctx.strokeStyle = '#d7ccc8';
+        ctx.beginPath(); ctx.moveTo(-3, 2 - bob); ctx.lineTo(15, -10 - bob); ctx.stroke();
+        ctx.fillStyle = '#b0bec5'; ctx.beginPath(); ctx.arc(15, -10 - bob, 1.5, 0, Math.PI*2); ctx.fill();
+      
+      // --- NEW BOSS VISUALS ---
+      } else if (type === 'Knight') {
+        // Heavy Greatsword
+        ctx.moveTo(-3, -4 - bob); ctx.lineTo(6, -1 - bob); ctx.stroke();
+        ctx.strokeStyle = '#ecf0f1'; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.moveTo(6, -1 - bob); ctx.lineTo(18, -12 - bob); ctx.stroke();
+        // Tower Shield
+        ctx.fillStyle = '#7f8c8d'; 
+        ctx.fillRect(-12, -8 - bob, 8, 18);
+        ctx.strokeStyle = '#2c3e50'; ctx.strokeRect(-12, -8 - bob, 8, 18);
+      } else if (type === 'Gladiator') {
+        // Gladiator Hat (procedural cone with metallic shine)
+        ctx.fillStyle = '#8b7355'; ctx.strokeStyle = '#5d4e37';
+        ctx.beginPath(); ctx.moveTo(-8, -15 - bob); ctx.lineTo(8, -15 - bob); ctx.lineTo(3, -25 - bob); ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.fillStyle = '#a89070'; ctx.fillRect(-8, -15 - bob, 16, 3);
+        // Hammer Mace
+        ctx.strokeStyle = '#8b7355'; ctx.lineWidth = 3;
+        // Handle/shaft
+        ctx.beginPath(); ctx.moveTo(-2, 2 - bob); ctx.lineTo(4, 18 - bob); ctx.stroke();
+        // Mace head (multiple spikes around a sphere)
+        ctx.fillStyle = '#696969'; ctx.strokeStyle = '#2f4f4f';
+        ctx.beginPath(); ctx.arc(4, 22 - bob, 7, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+        // Spikes on mace
+        ctx.strokeStyle = '#696969'; ctx.lineWidth = 2;
+        const spikeAngles = [0, Math.PI/3, 2*Math.PI/3, Math.PI, 4*Math.PI/3, 5*Math.PI/3];
+        spikeAngles.forEach(angle => {
+          const sx = Math.cos(angle) * 7;
+          const sy = Math.sin(angle) * 7;
+          ctx.beginPath(); ctx.moveTo(4 + sx, 22 - bob + sy); ctx.lineTo(4 + sx * 1.5, 22 - bob + sy * 1.5); ctx.stroke();
+        });
+      } else if (type === 'Priestess') {
+        // Dark Magic Aura / Orbs
+        ctx.moveTo(-3, -4 - bob); ctx.lineTo(6, -6 - bob); ctx.stroke();
+        ctx.strokeStyle = '#8e44ad'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(6, 4); ctx.lineTo(6, -18 - bob); ctx.stroke();
+        ctx.fillStyle = '#f1c40f'; // Gold glowing magic
+        ctx.beginPath(); ctx.arc(6, -20 - bob, 4, 0, Math.PI*2); ctx.fill();
+        // Flowing Robe Base
+        ctx.fillStyle = color;
+        ctx.beginPath(); ctx.moveTo(-6, 12); ctx.lineTo(6, 12); ctx.lineTo(0, -2); ctx.fill();
+      } else if (type === 'MagicHand') {
+        // Floating magical hand with a glowing aura
+        ctx.save();
+        ctx.translate(8, -8 - bob);
+        ctx.strokeStyle = '#7b1fa2'; ctx.lineWidth = 3;
+        ctx.fillStyle = color;
+        ctx.beginPath(); ctx.moveTo(-8, 4); ctx.quadraticCurveTo(-14, -6, -10, -14); ctx.quadraticCurveTo(-6, -20, 0, -18); ctx.quadraticCurveTo(8, -14, 12, -4); ctx.quadraticCurveTo(14, 2, 8, 8); ctx.quadraticCurveTo(2, 12, -4, 10); ctx.closePath(); ctx.fill(); ctx.stroke();
+        ctx.strokeStyle = '#80deea'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(0, -6, 10, 0, Math.PI * 2); ctx.stroke();
+        ctx.fillStyle = '#ffeb3b'; ctx.beginPath(); ctx.arc(2, -8, 2.8, 0, Math.PI * 2); ctx.fill();
+        ctx.restore();
+      }
+
+      ctx.restore();
+    }
+
+    // --- GLOBAL STATE ---
+    const State = {
+      difficulty: 'Medium', totalFlags: 20, MAX_HEROES: 6,
+      heroRoster: [], selectedHeroes: [], setupAvatars: [], 
+      gold: 500, lives: 30, currentWave: 1, // SET TO 30 FOR ALL MODES
+      isGameOver: false, isPausedForForfeit: false,
+      pendingUnit: null, sellMode: false,   
+      waveState: 'prep', prepTimer: 5.0, currentWaveData: null,
+      finalBossColor: null
+    };
+
+    // UI Nodes
+    const ui = {
+      mainMenu: document.getElementById('screen-main-menu'),
+      setup: document.getElementById('screen-setup'),
+      gameplay: document.getElementById('screen-gameplay'),
+      heroGrid: document.getElementById('hero-grid'),
+      heroCount: document.getElementById('hero-count-display'),
+      diffBtns: document.querySelectorAll('.diff-btn'),
+      btnStartGame: document.getElementById('btn-start-game'),
+      heroUnitRow: document.getElementById('hero-unit-row'),
+      actionHint: document.getElementById('action-hint'),
+      hudGold: document.getElementById('hud-gold'),
+      hudWave: document.getElementById('hud-wave'),
+      hudSellCoin: document.getElementById('hud-sell-coin'),
+      modal: document.getElementById('game-modal'),
+      modalTitle: document.getElementById('modal-title'),
+      modalText: document.getElementById('modal-text'),
+      forfeitModal: document.getElementById('forfeit-modal')
+    };
+
+    let titleAnim = new window.TD.TitleAnimation(document.getElementById('hero-canvas'));
+    titleAnim.init(); titleAnim.start();
+
+    // --- PHASE 2 SETUP HANDLERS ---
+    let setupAnimReqId = null;
+
+    function startSetupAnim() {
+      function loop(timestamp) {
+        if (ui.setup.classList.contains('hidden')) return;
+        State.setupAvatars.forEach(av => {
+          av.ctx.clearRect(0, 0, 80, 80);
+          drawStickman(av.ctx, 40, 50, av.type, true, av.gender, false, timestamp, av.hasLongHair);
+        });
+        setupAnimReqId = requestAnimationFrame(loop);
+      }
+      setupAnimReqId = requestAnimationFrame(loop);
+    }
+
+    document.getElementById('btn-start-setup').addEventListener('click', () => {
+      titleAnim.stop();
+      ui.mainMenu.classList.replace('active', 'hidden');
+      ui.setup.classList.replace('hidden', 'active');
+      if (State.heroRoster.length === 0) generateHeroRoster();
+      startSetupAnim();
+    });
+
+    document.getElementById('btn-back-menu').addEventListener('click', () => {
+      cancelAnimationFrame(setupAnimReqId);
+      ui.setup.classList.replace('active', 'hidden');
+      ui.mainMenu.classList.replace('hidden', 'active');
+      titleAnim.start();
+    });
+
+    ui.diffBtns.forEach(btn => btn.addEventListener('click', (e) => {
+      ui.diffBtns.forEach(b => b.classList.remove('active'));
+      const target = e.currentTarget; target.classList.add('active');
+      State.difficulty = target.dataset.diff;
+      State.totalFlags = parseInt(target.dataset.flags, 10);
+    }));
+
+    document.getElementById('tab-standard').addEventListener('click', () => {
+      document.getElementById('tab-standard').classList.add('active');
+      document.getElementById('tab-heroes').classList.remove('active');
+      document.getElementById('content-standard').classList.add('active');
+      document.getElementById('content-heroes').classList.remove('active');
+      State.pendingUnit = null; updateHUD();
+    });
+    document.getElementById('tab-heroes').addEventListener('click', () => {
+      document.getElementById('tab-heroes').classList.add('active');
+      document.getElementById('tab-standard').classList.remove('active');
+      document.getElementById('content-heroes').classList.add('active');
+      document.getElementById('content-standard').classList.remove('active');
+      State.pendingUnit = null; updateHUD();
+    });
+
+    function generateHeroRoster() {
+      // 36 fixed heroes with exactly 2-word names
+      const fixedHeroes = [
+        { name: 'Lin Wei', classType: 'Magic', gender: 'female', hasLongHair: true },
+        { name: 'Mei Ling', classType: 'Spear', gender: 'female', hasLongHair: true },
+        { name: 'Zhao Yun', classType: 'Blade', gender: 'male', hasLongHair: false },
+        { name: 'Wei Yan', classType: 'Blade', gender: 'male', hasLongHair: false },
+        { name: 'Yan Yan', classType: 'Melee', gender: 'female', hasLongHair: true },
+        { name: 'Tie Quan', classType: 'Melee', gender: 'female', hasLongHair: false },
+        { name: 'Jian Guo', classType: 'Melee', gender: 'male', hasLongHair: false },
+        { name: 'Shan Hu', classType: 'Melee', gender: 'male', hasLongHair: false },
+        { name: 'Bo Qin', classType: 'Melee', gender: 'male', hasLongHair: false },
+        { name: 'Lei Gong', classType: 'Melee', gender: 'male', hasLongHair: false },
+        { name: 'Sun Shang', classType: 'Archer', gender: 'female', hasLongHair: true },
+        { name: 'Huang Zhong', classType: 'Archer', gender: 'male', hasLongHair: false },
+        { name: 'Ma Chao', classType: 'Spear', gender: 'male', hasLongHair: false },
+        { name: 'Guan Yu', classType: 'Blade', gender: 'male', hasLongHair: true },
+        { name: 'Zhang Fei', classType: 'Mace', gender: 'male', hasLongHair: false },
+        { name: 'Lu Bu', classType: 'Mace', gender: 'male', hasLongHair: true },
+        { name: 'Diao Chan', classType: 'Magic', gender: 'female', hasLongHair: true },
+        { name: 'Zhu Ge', classType: 'Magic', gender: 'male', hasLongHair: true },
+        { name: 'Pang Tong', classType: 'Magic', gender: 'male', hasLongHair: false },
+        { name: 'Zhou Yu', classType: 'Archer', gender: 'male', hasLongHair: true },
+        { name: 'Xiao Qiao', classType: 'Magic', gender: 'female', hasLongHair: true },
+        { name: 'Da Qiao', classType: 'Magic', gender: 'female', hasLongHair: true },
+        { name: 'Sun Quan', classType: 'Blade', gender: 'male', hasLongHair: false },
+        { name: 'Liu Bei', classType: 'Blade', gender: 'male', hasLongHair: false },
+        { name: 'Cao Cao', classType: 'Blade', gender: 'male', hasLongHair: false },
+        { name: 'Xiahou Dun', classType: 'Blade', gender: 'male', hasLongHair: false },
+        { name: 'Xiahou Yuan', classType: 'Archer', gender: 'male', hasLongHair: false },
+        { name: 'Xu Chu', classType: 'Mace', gender: 'male', hasLongHair: false },
+        { name: 'Dian Wei', classType: 'Mace', gender: 'male', hasLongHair: false },
+        { name: 'Zhang Liao', classType: 'Spear', gender: 'male', hasLongHair: false },
+        { name: 'Gan Ning', classType: 'Blade', gender: 'male', hasLongHair: false },
+        { name: 'Tai Shi', classType: 'Archer', gender: 'male', hasLongHair: false },
+        { name: 'Lu Meng', classType: 'Spear', gender: 'male', hasLongHair: false },
+        { name: 'Lu Xun', classType: 'Magic', gender: 'male', hasLongHair: false },
+        { name: 'Huang Gai', classType: 'Mace', gender: 'male', hasLongHair: false },
+        { name: 'Ding Feng', classType: 'Melee', gender: 'male', hasLongHair: false }
+      ];
+
+      // Map IDs to the static roster
+      State.heroRoster = fixedHeroes.map((h, index) => ({ id: index + 1, ...h }));
+
+      ui.heroGrid.innerHTML = '';
+      State.setupAvatars = [];
+
+      State.heroRoster.forEach(hero => {
+        const card = document.createElement('div');
+        card.className = `hero-card ${hero.gender}`;
+        card.innerHTML = `
+          <canvas width="80" height="80" class="hero-avatar"></canvas>
+          <div style="font-weight:bold">${hero.name}</div>
+          <div style="font-size:0.8em; color:var(--gold);">${hero.classType}</div>
+        `;
+        
+        const avCanvas = card.querySelector('.hero-avatar');
+        State.setupAvatars.push({ ctx: avCanvas.getContext('2d'), type: hero.classType, gender: hero.gender, hasLongHair: hero.hasLongHair });
+
+        card.addEventListener('click', () => {
+          const idx = State.selectedHeroes.findIndex(h => h.id === hero.id);
+          if (idx > -1) { State.selectedHeroes.splice(idx, 1); card.classList.remove('selected'); }
+          else if (State.selectedHeroes.length < State.MAX_HEROES) { State.selectedHeroes.push(hero); card.classList.add('selected'); }
+          
+          const count = State.selectedHeroes.length;
+          ui.heroCount.innerText = `${count} / ${State.MAX_HEROES} Selected`;
+          ui.btnStartGame.disabled = count !== State.MAX_HEROES;
+          ui.btnStartGame.className = count === State.MAX_HEROES ? 'primary-btn' : 'primary-btn disabled';
+        });
+        ui.heroGrid.appendChild(card);
+      });
+    }
+
+    // --- PROCEDURAL CSS ARROWS ---
+    function renderCSSArrows(data) {
+      const container = document.getElementById('css-arrow-container');
+      container.innerHTML = '';
+      if (!data) return;
+      
+      let enemySummary = `PER PATH: ` + data.types.map(t => `${t.quantity}x ${t.type}`).join(' + ');
+      let bossName = State.difficulty === 'Easy' ? 'THE KNIGHT' : (State.difficulty === 'Medium' ? 'THE GLADIATOR' : 'THE PRIESTESS');
+      if (data.isFinalWave) {
+         enemySummary = `20x Force: ` + data.types.map(t => `${t.quantity}x ${t.type}`).join(' + ');
+      }
+
+      data.lanes.forEach(laneIdx => {
+        let laneHasBoss = data.bossLanes && data.bossLanes.includes(laneIdx);
+
+        let wrapper = document.createElement('div');
+        wrapper.className = 'css-arrow-wrapper';
+        
+        if (laneIdx === 0) { wrapper.style.left = '100px'; wrapper.style.top = '50%'; }
+        if (laneIdx === 1) { wrapper.style.left = 'calc(100% - 100px)'; wrapper.style.top = '50%'; }
+        if (laneIdx === 2) { wrapper.style.left = '50%'; wrapper.style.top = '100px'; }
+        if (laneIdx === 3) { wrapper.style.left = '50%'; wrapper.style.top = 'calc(100% - 160px)'; }
+
+        let direction = laneIdx === 0 ? 'right' : laneIdx === 1 ? 'left' : laneIdx === 2 ? 'down' : 'up';
+        let bossClass = laneHasBoss ? 'boss' : '';
+        
+        let arrowHtml = `<div class="css-arrow-shape ${direction} ${bossClass}"></div>`;
+        if (laneIdx === 0 || laneIdx === 1) { arrowHtml += arrowHtml; } // Double horizontal arrows
+
+        let skull = laneHasBoss ? `<span style="font-size:20px;">💀</span>` : '';
+        let labelClass = laneHasBoss ? 'css-arrow-label boss' : 'css-arrow-label';
+        
+        wrapper.innerHTML = `
+          <div class="arrow-group">${arrowHtml} ${skull}</div>
+          <div class="${labelClass}">${enemySummary}${laneHasBoss ? ' + BOSS' : ''}</div>
+        `;
+        container.appendChild(wrapper);
+      });
+    }
+
+    function clearCSSArrows() {
+      document.getElementById('css-arrow-container').innerHTML = '';
+    }
+
+    // --- PHASE 3-5: ENGINE DEVELOPMENT ---
+    const canvas = document.getElementById('game-canvas');
+    const ctx = canvas.getContext('2d');
+    let W, H, cx, cy;
+    let lastTime = 0;
+    let reqId;
+    let plots = [];
+    let enemies = [];
+    let projectiles = [];
+    
+    const PathEngine = { spawnPoints: [], baseRadius: 42, pathWidth: 36 };
+
+    document.getElementById('btn-forfeit').addEventListener('click', () => {
+      State.isPausedForForfeit = true;
+      ui.forfeitModal.classList.remove('hidden');
+    });
+    document.getElementById('btn-forfeit-cancel').addEventListener('click', () => {
+      State.isPausedForForfeit = false;
+      ui.forfeitModal.classList.add('hidden');
+      lastTime = performance.now();
+    });
+    document.getElementById('btn-forfeit-confirm').addEventListener('click', () => {
+      ui.forfeitModal.classList.add('hidden');
+      endGame(false);
+    });
+
+    ui.btnStartGame.addEventListener('click', () => {
+      cancelAnimationFrame(setupAnimReqId);
+      ui.setup.classList.replace('active', 'hidden');
+      ui.gameplay.classList.replace('hidden', 'active');
+      initGame();
+    });
+
+    function initGame() {
+      window.addEventListener('resize', resizeCanvas);
+      plots = [];
+      resizeCanvas();
+
+      State.gold = 500;
+      State.lives = 30; // SET CONSTANT 30 LIVES HERE
+      State.currentWave = 1;
+      State.isGameOver = false;
+      State.isPausedForForfeit = false;
+      State.pendingUnit = null;
+      State.sellMode = false;
+      State.finalBossColor = rollFinalBossColor();
+      enemies = []; projectiles = [];
+      ui.modal.classList.add('hidden');
+      clearCSSArrows();
+
+      ui.heroUnitRow.innerHTML = '';
+      State.selectedHeroes.forEach(hero => {
+        const btn = document.createElement('button');
+        btn.className = 'unit-btn hero-btn';
+        btn.dataset.type = hero.classType;
+        btn.dataset.isHero = "true";
+        btn.dataset.heroName = hero.name;
+        btn.dataset.gender = hero.gender;
+        btn.dataset.hasLongHair = hero.hasLongHair;
+        btn.innerHTML = `<span class="unit-type">${hero.name}<br>(${hero.classType})</span><span class="unit-cost">150 G</span>`;
+        ui.heroUnitRow.appendChild(btn);
+      });
+
+      document.querySelectorAll('.unit-btn').forEach(btn => {
+        btn.replaceWith(btn.cloneNode(true));
+      });
+      document.querySelectorAll('.unit-btn').forEach(btn => {
+        btn.addEventListener('click', handleUnitButtonClick);
+      });
+
+      updateHUD();
+      WaveManager.initWaveSetup();
+      
+      lastTime = performance.now();
+      reqId = requestAnimationFrame(gameLoop);
+    }
+
+    function resizeCanvas() {
+      W = canvas.width = window.innerWidth;
+      H = canvas.height = window.innerHeight;
+      cx = W / 2; cy = H / 2;
+      
+      PathEngine.spawnPoints = [
+        {x: -30, y: cy},
+        {x: W + 30, y: cy},
+        {x: cx, y: -30},
+        {x: cx, y: H + 30}
+      ];
+
+      const hSpacing = 75; const vSpacing = 75;
+      const hOffsets = [-110, -55, 55, 110]; 
+      const vOffsets = [-110, -55, 55, 110]; 
+
+      let newPlots = [];
+
+      // Map nodes to logical coordinates (logX, logY) relative to the center
+      let col = -1;
+      for(let x = cx - 80; x > 50; x -= hSpacing) {
+        hOffsets.forEach((off, idx) => newPlots.push({x: x, y: cy + off, r: 22, logX: col, logY: idx, unit: null}));
+        col--;
+      }
+      
+      col = 1;
+      for(let x = cx + 80; x < W - 50; x += hSpacing) {
+        hOffsets.forEach((off, idx) => newPlots.push({x: x, y: cy + off, r: 22, logX: col, logY: idx, unit: null}));
+        col++;
+      }
+      
+      let row = -1;
+      for(let y = cy - 80; y > 50; y -= vSpacing) {
+        vOffsets.forEach((off, idx) => newPlots.push({x: cx + off, y: y, r: 22, logX: idx, logY: row, unit: null}));
+        row--;
+      }
+      
+      row = 1;
+      for(let y = cy + 80; y < H - 50; y += vSpacing) {
+        vOffsets.forEach((off, idx) => newPlots.push({x: cx + off, y: y, r: 22, logX: idx, logY: row, unit: null}));
+        row++;
+      }
+
+      // Preserve existing units by migrating them to their equivalent logical coordinate on the resized grid
+      newPlots.forEach(np => {
+        const oldPlot = plots.find(op => op.logX === np.logX && op.logY === np.logY);
+        if (oldPlot && oldPlot.unit) {
+          np.unit = oldPlot.unit;
+        }
+      });
+
+      // Assign the newly built array (with preserved units) back to the global array
+      plots = newPlots;
+    }
+
+    const WaveManager = {
+      spawnQueue: [], spawnTimer: 0, spawnInterval: 0.2,
+      initWaveSetup() {
+        State.waveState = 'prep'; State.prepTimer = 5.0; 
+        const isBossWave = State.currentWave % 5 === 0;
+        const isFinalWave = State.currentWave === State.totalFlags;
+        
+        let waveData = { types: [], lanes: [0, 1, 2, 3], isBossWave: isBossWave, isFinalWave: isFinalWave };
+
+        let totalPerPath = 5 * Math.ceil(State.currentWave / 5);
+
+        if (isFinalWave) {
+          const candidateTypes = ['Blade', 'Archer', 'Magic', 'Melee'];
+          const shuffled = [...candidateTypes].sort(() => Math.random() - 0.5);
+          const typeA = shuffled[0];
+          const typeB = shuffled[1] || shuffled[0];
+          const split = Math.floor(totalPerPath / 2);
+          waveData.types = [
+            { type: typeA, quantity: split },
+            { type: typeB, quantity: totalPerPath - split }
+          ];
+        } else if (State.currentWave >= 5) {
+          let t1 = ['Melee', 'Blade', 'Mace', 'Spear'][State.currentWave % 4];
+          let t2 = ['Archer', 'Magic'][State.currentWave % 2];
+          waveData.types = [
+            { type: t1, quantity: Math.ceil(totalPerPath/2) },
+            { type: t2, quantity: Math.floor(totalPerPath/2) }
+          ];
+        } else {
+          const baseType = ['Melee', 'Blade', 'Archer', 'Magic', 'Mace', 'Spear'][(State.currentWave - 1) % 6];
+          waveData.types = [{ type: baseType, quantity: totalPerPath }];
+        }
+
+        State.currentWaveData = waveData;
+        this.spawnQueue = [];
+
+        // Regular minions for every lane; the final wave adds the full mixed force while the ultimate boss occupies one lane.
+        waveData.lanes.forEach(lane => {
+          waveData.types.forEach(t => {
+            for (let i = 0; i < t.quantity; i++) {
+              this.spawnQueue.push({ type: t.type, lane: lane });
+            }
+          });
+        });
+
+        this.spawnQueue.sort(() => Math.random() - 0.5);
+
+        // Boss Logic mapped with explicit Directional Awareness
+        let bossDirections = [];
+        if (isFinalWave) {
+          // Final Boss Override: One massive boss in a random single lane
+          let finalBossLane = waveData.lanes[Math.floor(Math.random() * waveData.lanes.length)];
+          waveData.bossLanes = [finalBossLane];
+          bossDirections.push(['WEST', 'EAST', 'NORTH', 'SOUTH'][finalBossLane]);
+          
+          let bossType = 'Knight'; // Easy
+          if (State.difficulty === 'Medium') bossType = 'Gladiator';
+          if (State.difficulty === 'Hard') bossType = 'Priestess';
+
+          // Push the ultimate boss to the queue
+          this.spawnQueue.push({ type: bossType, lane: finalBossLane, isUltimate: true });
+        } else if (isBossWave) {
+          // Standard mid-game boss every 5th wave with a randomized archetype
+          let bossLanes = [...waveData.lanes].sort(() => Math.random() - 0.5).slice(0, 1);
+          waveData.bossLanes = bossLanes;
+          const bossPool = ['Melee', 'Blade', 'Archer', 'Magic'];
+
+          bossLanes.forEach(lane => {
+            bossDirections.push(['WEST', 'EAST', 'NORTH', 'SOUTH'][lane]);
+            const bossType = bossPool[Math.floor(Math.random() * bossPool.length)];
+            this.spawnQueue.push({ type: bossType, lane: lane, isBoss: true });
+          });
+        }
+        
+        waveData.bossDirections = bossDirections;
+
+        renderCSSArrows(waveData);
+        this.spawnInterval = (State.difficulty === 'Hard' ? 0.35 : 0.6) / waveData.lanes.length;
+        this.spawnTimer = 0;
+      },
+      
+      update(dt) {
+        if (State.waveState === 'prep') {
+          State.prepTimer -= dt;
+          if (State.prepTimer <= 0) { State.waveState = 'active'; clearCSSArrows(); }
+          return;
+        }
+        if (this.spawnQueue.length > 0) {
+          this.spawnTimer -= dt;
+          if (this.spawnTimer <= 0) { this.spawnEnemy(); this.spawnTimer = this.spawnInterval; }
+        } else if (enemies.length === 0) {
+          if (State.currentWave < State.totalFlags) {
+            State.currentWave++; updateHUD(); this.initWaveSetup();
+          } else { endGame(true); }
+        }
+      },
+      
+      spawnEnemy() {
+        if (this.spawnQueue.length === 0) return;
+        const spawnData = this.spawnQueue.shift();
+
+        const hpMult = 1 + (State.currentWave * 0.25) + (State.difficulty === 'Hard' ? 0.5 : 0);
+        let speedMult = State.difficulty === 'Medium' ? 0.8 : (State.difficulty === 'Hard' ? 1.0 : 0.5);
+
+        const isUltimate = spawnData.isUltimate;
+        const isBossEnemy = spawnData.isBoss || spawnData.type === 'HeroEnemy' || isUltimate;
+        
+        let enemyType = (spawnData.type === 'HeroEnemy') ? 'Blade' : spawnData.type; 
+        
+        // Massive stat bumps for the Ultimate Bosses
+        let enemyHp = 25 * hpMult;
+        let enemyDamage = 5;
+        let speed = 45 * speedMult;
+
+        if (isUltimate) {
+            enemyHp = 3500 * hpMult; // Insane health pool
+            enemyDamage = 100; // Instant death to lives basically
+            speed = 20 * speedMult; // Slow and menacing
+        } else if (isBossEnemy) {
+            enemyHp = 600 * hpMult + 300;
+            enemyDamage = 25;
+            speed = 35 * speedMult;
+        }
+
+        if (isBossEnemy) SFX.playBossSpawn(isUltimate);
+
+        enemies.push({
+          type: enemyType, hp: enemyHp, maxHp: enemyHp,
+          speed: speed, pathIdx: spawnData.lane, progress: 0,
+          x: PathEngine.spawnPoints[spawnData.lane].x, y: PathEngine.spawnPoints[spawnData.lane].y,
+          isHeroEnemy: isBossEnemy, isUltimate: isUltimate, damage: enemyDamage,
+          colorOverride: isUltimate ? State.finalBossColor : null
+        });
+      }
+    };
+
+    function updateEntities(dt) {
+      if (State.isGameOver || State.isPausedForForfeit) return;
+
+      for (let i = enemies.length - 1; i >= 0; i--) {
+        let e = enemies[i];
+
+        e.progress += e.speed * dt;
+        const sp = PathEngine.spawnPoints[e.pathIdx];
+        const fullDist = Math.hypot(cx - sp.x, cy - sp.y);
+        const ratio = e.progress / fullDist;
+        
+        if (ratio >= 1.0) {
+          SFX.playBreach();
+          // Adjust Life penalties based on Entity Class
+          let lifePenalty = 1;
+          if (e.isUltimate) {
+              lifePenalty = 7;
+          } else if (e.isHeroEnemy) {
+              lifePenalty = 3;
+          }
+            
+          State.lives -= lifePenalty; 
+          updateHUD(); 
+          enemies.splice(i, 1);
+          if (State.lives <= 0) endGame(false);
+          continue;
+        }
+        e.x = sp.x + (cx - sp.x) * ratio; e.y = sp.y + (cy - sp.y) * ratio;
+      }
+
+      plots.forEach(plot => {
+        if (!plot.unit) return;
+        const u = plot.unit;
+        u.cooldown -= dt;
+        if (u.cooldown <= 0) {
+          let target = null; let maxSearchRange = u.range;
+          for (let e of enemies) {
+            let dist = Math.hypot(e.x - plot.x, e.y - plot.y);
+            if (dist < maxSearchRange) { maxSearchRange = dist; target = e; }
+          }
+          if (target) {
+            u.cooldown = u.fireRate;
+            SFX.playAttack(u.type);
+            if (u.atkType === 'projectile') {
+              projectiles.push({ x: plot.x, y: plot.y - 10, target: target, dmg: u.damage, speed: 320, color: u.color, type: u.type });
+            } else {
+              target.hp -= u.damage;
+              projectiles.push({ x: target.x, y: target.y, target: null, life: 0.1, color: '#ffeb3b', r: 12, effectType: u.type });
+            }
+          }
+        }
+      });
+
+      for (let i = projectiles.length - 1; i >= 0; i--) {
+        let p = projectiles[i];
+        if (p.target === null) {
+          p.life -= dt; if (p.life <= 0) projectiles.splice(i, 1);
+          continue;
+        }
+        if (!enemies.includes(p.target)) { projectiles.splice(i, 1); continue; }
+        let dx = p.target.x - p.x; let dy = p.target.y - p.y;
+        let dist = Math.hypot(dx, dy);
+        if (dist < 12) {
+          p.target.hp -= p.dmg; projectiles.splice(i, 1);
+        } else {
+          p.x += (dx / dist) * p.speed * dt; p.y += (dy / dist) * p.speed * dt;
+        }
+      }
+
+      for (let i = enemies.length - 1; i >= 0; i--) {
+        if (enemies[i].hp <= 0) {
+          State.gold += enemies[i].isUltimate ? 500 : (enemies[i].isHeroEnemy ? 100 : 12);
+          updateHUD(); enemies.splice(i, 1);
+        }
+      }
+    }
+
+    function drawGame() {
+      ctx.clearRect(0, 0, W, H);
+      const now = performance.now();
+
+      // Lanes
+      ctx.fillStyle = '#1e2d3b';
+      ctx.fillRect(0, cy - PathEngine.pathWidth/2, W, PathEngine.pathWidth);
+      ctx.fillRect(cx - PathEngine.pathWidth/2, 0, PathEngine.pathWidth, H);
+
+      // Central Palace
+      ctx.fillStyle = '#8a2328';
+      ctx.fillRect(cx - PathEngine.baseRadius, cy - PathEngine.baseRadius, PathEngine.baseRadius*2, PathEngine.baseRadius*2);
+      ctx.fillStyle = '#c9a24b';
+      ctx.strokeRect(cx - PathEngine.baseRadius, cy - PathEngine.baseRadius, PathEngine.baseRadius*2, PathEngine.baseRadius*2);
+      ctx.fillStyle = '#ffffff'; ctx.textAlign = 'center'; ctx.font = 'bold 16px sans-serif';
+      ctx.fillText("PALACE", cx, cy - 2);
+      ctx.fillStyle = '#ff4d4d'; ctx.font = 'bold 14px sans-serif';
+      ctx.fillText(`Lives: ${Math.max(0, State.lives)}`, cx, cy + 18);
+
+      plots.forEach(p => {
+        ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI*2);
+        
+        if (State.pendingUnit && !p.unit) {
+          let heroDeployed = false;
+          if (State.pendingUnit.isHero) {
+            heroDeployed = plots.some(pl => pl.unit && pl.unit.isHero && pl.unit.type === State.pendingUnit.type);
+          }
+          if (heroDeployed) {
+            ctx.fillStyle = 'rgba(50,70,90,0.8)'; ctx.strokeStyle = '#c9a24b';
+          } else {
+            ctx.fillStyle = 'rgba(52, 152, 219, 0.5)'; ctx.strokeStyle = '#3498db';
+          }
+        } else if (State.pendingUnit && p.unit && !p.unit.isHero && p.unit.type === State.pendingUnit.type && p.unit.level < 5 && !State.pendingUnit.isHero) {
+          ctx.fillStyle = 'rgba(46, 204, 113, 0.5)'; ctx.strokeStyle = '#2ecc71';
+        } else if (State.sellMode && p.unit) {
+          ctx.fillStyle = 'rgba(231, 76, 60, 0.5)'; ctx.strokeStyle = '#e74c3c';
+        } else {
+          ctx.fillStyle = 'rgba(50,70,90,0.8)'; ctx.strokeStyle = '#c9a24b';
+        }
+        
+        ctx.fill(); ctx.lineWidth = 2; ctx.stroke();
+
+        if (p.unit) {
+          drawStickman(ctx, p.x, p.y + 2, p.unit.type, p.unit.isHero, p.unit.gender, false, now, p.unit.hasLongHair);
+          
+          ctx.fillStyle = (p.unit.isHero || p.unit.level === 5) ? '#ffb300' : '#ffffff';
+          ctx.font = 'bold 12px sans-serif'; ctx.textAlign = 'center';
+          ctx.fillText(p.unit.isHero ? p.unit.name : (p.unit.level === 5 ? 'MAX' : `Lv ${p.unit.level}`), p.x, p.y + 20);
+        }
+      });
+
+      if (State.waveState === 'prep' && State.currentWaveData) {
+        ctx.save();
+        const data = State.currentWaveData;
+        
+        let titleText = `FLAG ${State.currentWave} INCOMING`;
+        let enemySummary = `PER PATH: ` + data.types.map(t => `${t.quantity}x ${t.type}`).join(' + ');
+        let borderColor = '#ffb300';
+        
+        // Dynamically insert explicit Directional awareness for the Bosses
+        if (data.isFinalWave) {
+            titleText = `FINAL BATTLE INCOMING!`;
+            let bossName = State.difficulty === 'Easy' ? 'GIGANTIC KNIGHT' : (State.difficulty === 'Medium' ? 'ELDER DRAGON' : 'DARK PRIESTESS');
+            enemySummary = `BEWARE THE ${bossName} FROM THE ${data.bossDirections[0]}!`;
+            borderColor = '#ff0000'; // Menacing red for the final wave
+        } else if (data.isBossWave) {
+            enemySummary += `  ⚠️ BOSS FROM ${data.bossDirections.join(' & ')}`;
+        }
+        
+        ctx.font = 'bold 22px sans-serif';
+        const tw = Math.max(ctx.measureText(titleText).width, ctx.measureText(enemySummary).width) + 80;
+        const boxHeight = 85;
+        const boxY = cy - 140; 
+
+        ctx.fillStyle = 'rgba(20, 25, 30, 0.9)';
+        ctx.strokeStyle = borderColor;
+        ctx.lineWidth = 3;
+        ctx.fillRect(cx - tw/2, boxY, tw, boxHeight);
+        ctx.strokeRect(cx - tw/2, boxY, tw, boxHeight);
+
+        ctx.fillStyle = borderColor; ctx.textAlign = 'center';
+        ctx.fillText(titleText, cx, boxY + 30);
+        
+        ctx.fillStyle = '#ffffff'; ctx.font = '16px sans-serif';
+        ctx.fillText(enemySummary, cx, boxY + 55);
+        
+        ctx.fillStyle = '#aaa'; ctx.font = '14px sans-serif';
+        ctx.fillText(`Battle starting in ${Math.ceil(State.prepTimer)}s`, cx, boxY + 75);
+
+        const flagWave = Math.sin(now * 0.006) * 6;
+        ctx.strokeStyle = '#c9a24b'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+        ctx.beginPath(); ctx.moveTo(cx - 35, boxY); ctx.lineTo(cx - 35, boxY - 55); ctx.stroke();
+        
+        ctx.fillStyle = '#8a2328';
+        ctx.beginPath();
+        ctx.moveTo(cx - 33, boxY - 53);
+        ctx.quadraticCurveTo(cx - 15, boxY - 65 + flagWave, cx + 15, boxY - 53 - flagWave);
+        ctx.lineTo(cx + 15, boxY - 30 - flagWave);
+        ctx.quadraticCurveTo(cx - 15, boxY - 42 + flagWave, cx - 33, boxY - 30);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      }
+
+      enemies.forEach(e => {
+        ctx.save();
+        if (e.isUltimate) {
+          ctx.translate(e.x, e.y);
+          ctx.scale(2.6, 2.6); // Massive 2.6x scale for the final boss
+          ctx.translate(-e.x, -e.y);
+        } else if (e.isHeroEnemy) {
+          ctx.translate(e.x, e.y);
+          ctx.scale(1.4, 1.4);
+          ctx.translate(-e.x, -e.y);
+        }
+
+        drawStickman(ctx, e.x, e.y, e.type, e.isHeroEnemy, 'male', true, now, e.isHeroEnemy, e.colorOverride);
+        ctx.restore();
+        
+        let hbWidth = e.isUltimate ? 50 : (e.isHeroEnemy ? 36 : 24);
+        let hbY = e.isUltimate ? e.y - 60 : (e.isHeroEnemy ? e.y - 32 : e.y - 20);
+
+        ctx.fillStyle = '#000000'; ctx.fillRect(e.x - hbWidth/2, hbY, hbWidth, 4);
+        ctx.fillStyle = '#2ecc71'; ctx.fillRect(e.x - hbWidth/2, hbY, hbWidth * (Math.max(0, e.hp) / e.maxHp), 4);
+        
+        // NEW BOSS QOL TAG
+        if (e.isHeroEnemy || e.isUltimate) {
+          ctx.fillStyle = '#ff0000';
+          ctx.font = 'bold 12px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText("BOSS", e.x, hbY - 8);
+        }
+      });
+
+      projectiles.forEach(p => {
+        if (p.type === 'Archer') {
+          // Draw arrow for Archer projectiles
+          ctx.save();
+          const dx = p.target ? p.target.x - p.x : 1;
+          const dy = p.target ? p.target.y - p.y : 0;
+          const angle = Math.atan2(dy, dx);
+          ctx.translate(p.x, p.y);
+          ctx.rotate(angle);
+          ctx.strokeStyle = p.color; ctx.lineWidth = 2;
+          ctx.beginPath(); ctx.moveTo(-6, 0); ctx.lineTo(8, 0); ctx.stroke();
+          ctx.fillStyle = p.color;
+          ctx.beginPath(); ctx.moveTo(8, 0); ctx.lineTo(14, -3); ctx.lineTo(14, 3); ctx.closePath(); ctx.fill();
+          ctx.beginPath(); ctx.moveTo(-6, 0); ctx.lineTo(-4, -3); ctx.lineTo(-4, 3); ctx.closePath(); ctx.fill();
+          ctx.restore();
+        } else {
+          // Draw circle for other projectiles (Magic, etc)
+          ctx.fillStyle = p.color; ctx.beginPath(); ctx.arc(p.x, p.y, p.r || 4, 0, Math.PI*2); ctx.fill();
+        }
+      });
+
+      // Draw melee attack effects
+      projectiles.forEach(p => {
+        if (p.effectType) {
+          const progress = 1 - (p.life / 0.1); // 0 to 1 as effect progresses
+          ctx.save();
+          
+          if (p.effectType === 'Blade') {
+            // Slash effect
+            ctx.strokeStyle = `rgba(255, 100, 0, ${Math.max(0, 1 - progress)})`;
+            ctx.lineWidth = 4 + progress * 8;
+            ctx.lineCap = 'round';
+            const slashLength = 40;
+            const angle = -Math.PI / 4 + progress * Math.PI / 2;
+            ctx.beginPath();
+            ctx.moveTo(p.x - Math.cos(angle) * slashLength, p.y - Math.sin(angle) * slashLength);
+            ctx.lineTo(p.x + Math.cos(angle) * slashLength, p.y + Math.sin(angle) * slashLength);
+            ctx.stroke();
+          } else if (p.effectType === 'Spear') {
+            // Thrust effect (straight line with point)
+            ctx.strokeStyle = `rgba(100, 150, 255, ${Math.max(0, 1 - progress)})`;
+            ctx.lineWidth = 3 + progress * 6;
+            ctx.lineCap = 'round';
+            const thrustDist = 50 * progress;
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y - 35);
+            ctx.lineTo(p.x, p.y + 35 + thrustDist);
+            ctx.stroke();
+            // Spear point
+            ctx.fillStyle = `rgba(100, 150, 255, ${Math.max(0, 1 - progress)})`;
+            ctx.beginPath();
+            ctx.moveTo(p.x, p.y + 40 + thrustDist);
+            ctx.lineTo(p.x - 4, p.y + 30 + thrustDist);
+            ctx.lineTo(p.x + 4, p.y + 30 + thrustDist);
+            ctx.closePath();
+            ctx.fill();
+          } else if (p.effectType === 'Melee') {
+            // Regular impact - simple expanding circle
+            ctx.strokeStyle = `rgba(255, 255, 100, ${Math.max(0, 1 - progress)})`;
+            ctx.lineWidth = 2;
+            const radius = 15 + progress * 25;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
+            ctx.stroke();
+          } else if (p.effectType === 'Mace') {
+            // Strong impact - multiple expanding rings
+            for (let i = 0; i < 3; i++) {
+              const delay = i * 0.03;
+              const adjustedProgress = Math.max(0, progress - delay);
+              ctx.strokeStyle = `rgba(200, 100, 0, ${Math.max(0, 1 - adjustedProgress) * 0.8})`;
+              ctx.lineWidth = 3 + adjustedProgress * 8;
+              const radius = 20 + adjustedProgress * 40;
+              ctx.beginPath();
+              ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
+              ctx.stroke();
+            }
+          }
+          ctx.restore();
+        }
+      });
+    }
+
+    // --- INTERACTION HANDLING ---
+    ui.hudSellCoin.addEventListener('click', () => {
+      State.sellMode = !State.sellMode;
+      if (State.sellMode) State.pendingUnit = null;
+      updateHUD();
+    });
+
+    function handleUnitButtonClick(e) {
+      const btn = e.currentTarget;
+      if (State.pendingUnit && State.pendingUnit.btn === btn) {
+        State.pendingUnit = null; updateHUD(); return;
+      }
+      
+      const isHero = btn.dataset.isHero === "true";
+      const cost = isHero ? 150 : UnitDict[btn.dataset.type].cost;
+      
+      if (State.gold >= cost && !btn.disabled) {
+        State.pendingUnit = {
+          type: btn.dataset.type,
+          isHero: isHero, gender: btn.dataset.gender,
+          hasLongHair: btn.dataset.hasLongHair === "true",
+          heroName: btn.dataset.heroName,
+          cost: cost, btn: btn
+        };
+        State.sellMode = false; updateHUD();
+      }
+    }
+
+    canvas.addEventListener('mousedown', (e) => {
+      if (State.isGameOver || State.isPausedForForfeit) return;
+      const rect = canvas.getBoundingClientRect();
+      const mx = e.clientX - rect.left; const my = e.clientY - rect.top;
+      
+      let clickedPlot = null;
+      plots.forEach(p => { if (Math.hypot(p.x - mx, p.y - my) < p.r) clickedPlot = p; });
+      
+      if (clickedPlot) {
+        if (State.sellMode && clickedPlot.unit) {
+          clickedPlot.unit = null; State.sellMode = false; updateHUD();
+          ui.actionHint.innerText = "Unit demolished. Node reclaimed."; ui.actionHint.style.color = '#2ecc71';
+        } else if (State.pendingUnit) {
+          if (!clickedPlot.unit) {
+            const isH = State.pendingUnit.isHero;
+            
+            if (State.gold >= State.pendingUnit.cost) {
+              State.gold -= State.pendingUnit.cost;
+              const baseStats = UnitDict[State.pendingUnit.type];
+              
+              clickedPlot.unit = {
+                type: State.pendingUnit.type, isHero: isH, gender: State.pendingUnit.gender,
+                hasLongHair: State.pendingUnit.hasLongHair, color: baseStats.color,
+                range: baseStats.range * (isH ? 1.35 : 1.0), damage: baseStats.damage * (isH ? 2.5 : 1.0),
+                fireRate: baseStats.fireRate * (isH ? 0.75 : 1.0), atkType: baseStats.type, cooldown: 0, level: 1,
+                name: State.pendingUnit.heroName
+              };
+              State.pendingUnit = null; updateHUD();
+            }
+          } else if (clickedPlot.unit && clickedPlot.unit.type === State.pendingUnit.type) {
+            
+            if (clickedPlot.unit.isHero || State.pendingUnit.isHero) {
+              ui.actionHint.innerText = State.pendingUnit.isHero ? "Heroes cannot upgrade standard units!" : "Heroes cannot be leveled up!"; 
+              ui.actionHint.style.color = '#ffb300';
+            } else if (clickedPlot.unit.level < 5) {
+              if (State.gold >= State.pendingUnit.cost) {
+                State.gold -= State.pendingUnit.cost;
+                clickedPlot.unit.level += 1; clickedPlot.unit.damage *= 1.5; clickedPlot.unit.range *= 1.1;
+                State.pendingUnit = null; updateHUD();
+                ui.actionHint.innerText = `Upgraded to Level ${clickedPlot.unit.level}!`; ui.actionHint.style.color = '#2ecc71';
+              } else {
+                ui.actionHint.innerText = "Not enough gold!"; ui.actionHint.style.color = '#e74c3c';
+              }
+            } else {
+              ui.actionHint.innerText = "Max Level Reached!"; ui.actionHint.style.color = '#ffb300';
+            }
+          } else {
+            ui.actionHint.innerText = "Types do not match."; ui.actionHint.style.color = '#e74c3c';
+          }
+        }
+      } else {
+        State.pendingUnit = null; State.sellMode = false; updateHUD();
+      }
+    });
+
+    let mouseX = 0, mouseY = 0;
+    canvas.addEventListener('mousemove', (e) => {
+      if (State.isGameOver || State.isPausedForForfeit) return;
+      const rect = canvas.getBoundingClientRect();
+      mouseX = e.clientX - rect.left; mouseY = e.clientY - rect.top;
+      
+      if (!State.pendingUnit && !State.sellMode) {
+        let hoveredPlot = null;
+        plots.forEach(p => { if (Math.hypot(p.x - mouseX, p.y - mouseY) < p.r) hoveredPlot = p; });
+        
+        if (hoveredPlot && hoveredPlot.unit) {
+          if (hoveredPlot.unit.isHero) {
+             ui.actionHint.innerText = `Occupied by Hero. No upgrades possible.`; ui.actionHint.style.color = '#ffb300';
+          } else if (hoveredPlot.unit.level < 5) {
+             ui.actionHint.innerText = `Occupied. Select unit again below to upgrade!`; ui.actionHint.style.color = '#3498db';
+          } else {
+             ui.actionHint.innerText = `Max Level (Lv 5).`; ui.actionHint.style.color = '#ffb300';
+          }
+        } else {
+           ui.actionHint.innerText = "Select a unit configuration below to build."; ui.actionHint.style.color = '#aaa';
+        }
+      }
+    });
+
+    function updateHUD() {
+      ui.hudGold.innerText = `Gold: ${State.gold}`;
+      ui.hudWave.innerText = `Flag: ${Math.min(State.currentWave, State.totalFlags)} / ${State.totalFlags}`;
+      ui.hudSellCoin.style.color = State.sellMode ? '#ff4d4d' : 'var(--gold)';
+      ui.hudSellCoin.style.textShadow = State.sellMode ? '0 0 10px #ff4d4d' : '1px 1px 3px #000';
+
+      document.querySelectorAll('.unit-btn').forEach(btn => {
+        const isHero = btn.dataset.isHero === "true";
+        const cost = isHero ? 150 : UnitDict[btn.dataset.type].cost;
+        
+        let isDeployed = false;
+        if (isHero) {
+          isDeployed = plots.some(p => p.unit && p.unit.isHero && p.unit.name === btn.dataset.heroName);
+        }
+
+        btn.disabled = State.gold < cost || isDeployed;
+
+        if (State.pendingUnit && State.pendingUnit.btn === btn) btn.classList.add('active');
+        else btn.classList.remove('active');
+      });
+
+      if (State.pendingUnit) {
+        ui.actionHint.innerText = State.pendingUnit.isHero ? "Select empty blue node to deploy Hero." : "Select blue node to build, or green to upgrade.";
+        ui.actionHint.style.color = '#aaa';
+      } else if (State.sellMode) {
+        ui.actionHint.innerText = "Select an active red highlighted unit to demolish.";
+        ui.actionHint.style.color = '#aaa';
+      }
+    }
+
+    function endGame(isVictory) {
+      State.isGameOver = true;
+      ui.modal.classList.remove('hidden');
+      if (isVictory) {
+        ui.modalTitle.innerText = "Victory!"; ui.modalTitle.style.color = "#4CAF50";
+        ui.modalText.innerText = "The Emperor is safe. Your strategy was flawless.";
+      } else {
+        ui.modalTitle.innerText = "Defeat!"; ui.modalTitle.style.color = "#e74c3c";
+        ui.modalText.innerText = "The operations failed. The capital base has fallen.";
+      }
+    }
+
+    document.getElementById('btn-restart').addEventListener('click', () => {
+      cancelAnimationFrame(reqId);
+      ui.gameplay.classList.replace('active', 'hidden');
+      ui.setup.classList.replace('hidden', 'active');
+      State.selectedHeroes = [];
+      ui.heroCount.innerText = `0 / ${State.MAX_HEROES} Selected`;
+      ui.btnStartGame.disabled = true; ui.btnStartGame.className = 'primary-btn disabled';
+      document.querySelectorAll('.hero-card').forEach(c => c.classList.remove('selected'));
+      startSetupAnim();
+    });
+
+    function gameLoop(timestamp) {
+      const dt = Math.min((timestamp - lastTime) / 1000, 0.1);
+      lastTime = timestamp;
+      if (!State.isPausedForForfeit) {
+        WaveManager.update(dt); updateEntities(dt);
+      }
+      drawGame();
+      if (!State.isGameOver) reqId = requestAnimationFrame(gameLoop);
+    }
+  </script>
+</body>
+</html>
