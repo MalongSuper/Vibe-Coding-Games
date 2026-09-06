@@ -1499,7 +1499,7 @@
 
                 const bodyCheck = willGrow ? snake : snake.slice(0, -1);
                 if (bodyCheck.some(s => s.x === head.x && s.y === head.y)) {
-                    if (!isInvincible) { triggerCrash(); return; }
+                    if (!isInvincible) { playCrashSound(); triggerCrash(); return; }
                 }
 
                 snake.unshift(head);
