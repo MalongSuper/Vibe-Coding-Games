@@ -1,0 +1,1642 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<title>Unfair Four — The Walnut Table</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+    --font-body: 'Inter', sans-serif;
+    --font-display: 'Fraunces', serif;
+    --font-mono: 'JetBrains Mono', monospace;
+
+    --felt: #0f172a;
+    --felt-2: #1e293b;
+
+    --wood-dark: #0f172a;
+    --wood: #1e3a8a;
+    --wood-mid: #2563eb;
+    --wood-light: #3b82f6;
+
+    --brass: #38bdf8;
+    --brass-bright: #7dd3fc;
+    --brass-dim: #0284c7;
+
+    --cream: #f8fafc;
+    --cream-dim: #cbd5e1;
+
+    --ink: #0f172a;
+
+    --red-1:#ff7b7b;
+    --red-2:#ef4444;
+    --red-3:#991b1b;
+
+    --amber-1:#fde68a;
+    --amber-2:#facc15;
+    --amber-3:#ca8a04;
+
+    --shadow-deep:0 18px 40px rgba(0,0,0,.45);
+  }
+
+  *{ box-sizing: border-box; }
+  html,body{ height:100%; }
+  body{
+    margin:0;
+    min-height:100vh;
+    font-family: var(--font-body);
+    color: var(--cream);
+    background:
+      radial-gradient(circle at top,#2563eb 0%,transparent 45%),
+      radial-gradient(circle at bottom,#0f172a 0%,transparent 55%),
+      linear-gradient(180deg,#0f172a,#020617);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    padding: 24px 14px;
+    overflow-x:hidden;
+  }
+
+  #app{ position:relative; z-index:1; width:100%; max-width: 620px; }
+
+  .screen{ display:none; }
+  .screen.active{ display:block; animation: fadeUp .45s ease both; }
+
+  @keyframes fadeUp{
+    from{ opacity:0; transform: translateY(10px); }
+    to{ opacity:1; transform: translateY(0); }
+  }
+
+  button{ font-family: inherit; cursor:pointer; }
+  button:focus-visible, .col-target:focus-visible{
+    outline: 2px solid var(--brass-bright);
+    outline-offset: 3px;
+  }
+
+  /* ---------- Wood panel base ---------- */
+  .panel{
+    position:relative;
+    background:linear-gradient(
+        145deg,
+        #3b82f6,
+        #2563eb 60%,
+        #1d4ed8
+    );
+    border-radius:18px;
+    box-shadow:var(--shadow-deep), inset 0 1px 0 rgba(255,255,255,.08);
+    padding:clamp(20px,5vw,38px);
+    overflow: hidden;
+  }
+
+  .corner{
+    position:absolute;
+    width: 22px; height:22px;
+    pointer-events:none;
+    z-index: 5;
+  }
+  .corner::before, .corner::after{
+    content:""; position:absolute; background: var(--brass);
+    box-shadow: 0 0 0 1px var(--brass-dim);
+  }
+  .corner::before{ width:100%; height:3px; top:0; }
+  .corner::after{ width:3px; height:100%; left:0; }
+  .corner.tl{ top:10px; left:10px; }
+  .corner.tr{ top:10px; right:10px; transform: scaleX(-1); }
+  .corner.bl{ bottom:10px; left:10px; transform: scaleY(-1); }
+  .corner.br{ bottom:10px; right:10px; transform: scale(-1,-1); }
+
+  /* ---------- Brass plaque buttons ---------- */
+  .plaque-btn{
+    display:flex; align-items:center; justify-content:center; gap:.5em;
+    width:100%;
+    border: 1px solid var(--brass-dim);
+    border-radius: 10px;
+    padding: 15px 22px;
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: clamp(15px, 4vw, 18px);
+    letter-spacing: .03em;
+    color: var(--ink);
+    background: linear-gradient(180deg, var(--brass-bright), var(--brass) 55%, var(--brass-dim));
+    box-shadow: 0 3px 0 #5e4a13, 0 8px 16px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.5);
+    transition: transform .12s ease, box-shadow .12s ease;
+  }
+  .plaque-btn:hover{ transform: translateY(-2px); box-shadow: 0 5px 0 #5e4a13, 0 12px 20px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.5); }
+  .plaque-btn:active{ transform: translateY(1px); box-shadow: 0 1px 0 #5e4a13, 0 4px 10px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.5); }
+
+  .plaque-btn.ghost{
+    background: linear-gradient(160deg, var(--wood-light), var(--wood-mid));
+    color: var(--cream);
+    border-color: rgba(201,162,39,.4);
+    box-shadow: 0 3px 0 #1d110a, 0 8px 16px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.08);
+  }
+  .plaque-btn.ghost:hover{ box-shadow: 0 5px 0 #1d110a, 0 12px 20px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.1); }
+  .plaque-btn.ghost:active{ box-shadow: 0 1px 0 #1d110a, 0 4px 10px rgba(0,0,0,.3), inset 0 1px 0 rgba(255,255,255,.08); }
+
+  .plaque-btn.small{ padding: 10px 16px; font-size: 14px; width:auto; }
+  .plaque-btn:disabled{ opacity:.45; cursor:not-allowed; transform:none !important; }
+
+  .btn-row{ display:flex; flex-direction:column; gap:14px; margin-top: 26px; }
+  .btn-row.cols-2{ flex-direction:row; flex-wrap:wrap; }
+  .btn-row.cols-2 .plaque-btn{ flex: 1 1 calc(50% - 7px); min-width: 140px; }
+
+  /* ---------- Menu screen ---------- */
+  .eyebrow{
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: .25em;
+    text-transform: uppercase;
+    color: var(--brass-bright);
+    text-align:center;
+    margin: 0 0 6px;
+    opacity:.85;
+  }
+  h1.title{
+    font-family: var(--font-display);
+    font-size: clamp(34px, 9vw, 54px);
+    font-weight: 700;
+    text-align:center;
+    margin: 0;
+    color: var(--cream);
+    letter-spacing: .01em;
+    text-shadow: 0 2px 0 rgba(0,0,0,.4), 0 0 30px rgba(201,162,39,.18);
+  }
+  p.tagline{
+    text-align:center;
+    color: var(--cream-dim);
+    font-size: 14px;
+    margin: 10px 0 0;
+  }
+  h2.subtitle{
+    font-family: var(--font-display);
+    font-weight:600;
+    font-size: clamp(20px, 5vw, 26px);
+    text-align:center;
+    margin: 0 0 4px;
+    color: var(--cream);
+  }
+  p.subtext{
+    text-align:center;
+    color: var(--cream-dim);
+    font-size: 13px;
+    margin: 0;
+  }
+
+  /* ---------- Ambient mini board on menu ---------- */
+  .ambient-wrap{
+    width: min(100%, 280px);
+    margin: 0 auto 22px;
+    aspect-ratio: 7 / 6;
+    background:linear-gradient(145deg,#3b82f6,#2563eb,#1d4ed8);
+    border-radius: 12px;
+    padding: 8px;
+    box-shadow: 0 10px 24px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.08);
+    position:relative;
+    overflow:hidden;
+  }
+  .ambient-grid{
+    position:absolute;
+    inset:8px;
+    display:grid;
+    grid-template-columns:repeat(7,1fr);
+    grid-template-rows:repeat(6,1fr);
+    gap:4%;
+    z-index:1;
+  }
+  .ambient-hole{
+    border-radius:50%;
+    background:#0f172a;
+    box-shadow: inset 0 2px 5px rgba(0,0,0,.6);
+  }
+  .ambient-piece{
+    position:absolute;
+    z-index:2;
+    width: calc(96%/7);
+    aspect-ratio:1;
+    border-radius:50%;
+    top: -15%;
+    opacity:0;
+    box-shadow: inset 0 -3px 5px rgba(0,0,0,.4), 0 2px 4px rgba(0,0,0,.4);
+    animation: ambientDrop 6s ease-in infinite;
+  }
+  .ambient-piece.red{ background: radial-gradient(circle at 35% 30%, var(--red-1), var(--red-2) 45%, var(--red-3) 100%); }
+  .ambient-piece.amber{ background: radial-gradient(circle at 35% 30%, var(--amber-1), var(--amber-2) 45%, var(--amber-3) 100%); }
+  @keyframes ambientDrop{
+    0%{ opacity:0; top:-15%; }
+    4%{ opacity:1; }
+    34%{ top: var(--land, 80%); opacity:1; }
+    80%{ top: var(--land, 80%); opacity:1; }
+    96%{ opacity:0; }
+    100%{ opacity:0; top:-15%; }
+  }
+
+  /* ---------- Mode / difficulty selection ---------- */
+  .option-btn{
+    display:flex; flex-direction:column; align-items:flex-start; gap:4px;
+    width:100%; padding:18px 22px; border-radius:12px;
+    border:2px solid rgba(125,211,252,.85);
+    background:linear-gradient(180deg, rgba(96,165,250,.55), rgba(59,130,246,.75));
+    color:#ffffff; box-shadow: 0 6px 18px rgba(37,99,235,.35), inset 0 1px 0 rgba(255,255,255,.25);
+    transition: transform .2s ease, background .2s ease, box-shadow .2s ease, border-color .2s ease;
+  }
+  .option-btn:hover{ border-color:#93c5fd; transform:translateY(-2px); background:rgba(59,130,246,.35); }
+  .option-btn:active{ transform: translateY(0); }
+  .option-btn .opt-title{ font-family: var(--font-display); font-weight:600; font-size: 18px; }
+  .option-btn .opt-desc{ font-size: 12.5px; color: var(--cream-dim); }
+
+  .diff-grid{ display:grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 22px; }
+
+  /* ---------- Difficulty Buttons ---------- */
+  .diff-btn{
+    border-radius:12px; padding:16px; text-align:center; color:#fff;
+    font-family:var(--font-display); font-weight:700; font-size:16px; border:2px solid transparent;
+    box-shadow: 0 5px 12px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.08);
+    transition: transform .2s ease, filter .2s ease, box-shadow .2s ease;
+  }
+  .diff-btn:hover{ transform:translateY(-3px); filter:brightness(1.08); box-shadow: 0 10px 22px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.12); }
+  .diff-btn[data-d="easy"]{ background:linear-gradient(180deg,#1f8f49,#166534); border-color:#4ade80; }
+  .diff-btn[data-d="medium"]{ background:linear-gradient(180deg,#ca8a04,#a16207); border-color:#facc15; }
+  .diff-btn[data-d="hard"]{ background:linear-gradient(180deg,#ea580c,#c2410c); border-color:#fb923c; }
+  .diff-btn[data-d="extreme"]{ background:linear-gradient(180deg,#dc2626,#991b1b); border-color:#f87171; }
+
+  .diff-btn .dots{ display:flex; justify-content:center; gap:5px; margin-top:9px; }
+  .diff-btn .dots span{ width:7px; height:7px; border-radius:50%; background:#2b2b2b; box-shadow: inset 0 1px 2px rgba(255,255,255,.08), 0 1px 2px rgba(0,0,0,.4); }
+  .diff-btn[data-d="easy"] .dots span.on{ background:#4ade80; }
+  .diff-btn[data-d="medium"] .dots span.on{ background:#fde047; }
+  .diff-btn[data-d="hard"] .dots span.on{ background:#fb923c; }
+  .diff-btn[data-d="extreme"] .dots span.on{ background:#f87171; }
+
+  .back-link{
+    display:inline-flex; align-items:center; gap:6px;
+    background:none; border:none; color: var(--cream-dim);
+    font-size: 13px; font-family: var(--font-body); margin-bottom: 18px; padding: 4px 0;
+  }
+  .back-link:hover{ color: var(--brass-bright); }
+
+  /* ---------- Game screen header ---------- */
+  .game-header{ display:flex; align-items:center; justify-content:space-between; margin-bottom: 14px; gap: 10px; flex-wrap:wrap; }
+  .brand{ display:flex; align-items:baseline; gap:8px; }
+  .brand .mark{ color: var(--brass-bright); font-size: 18px; }
+  .brand h3{ font-family: var(--font-display); font-weight:600; margin:0; font-size: 18px; color: var(--cream); letter-spacing: .02em; }
+  .header-actions{ display:flex; gap:8px; }
+
+  .scoreboard{
+    display:flex; align-items:center; justify-content:space-between; background: rgba(0,0,0,.22);
+    border: 1px solid rgba(201,162,39,.25); border-radius: 12px; padding: 12px 16px; margin-bottom: 16px; font-family: var(--font-mono); gap: 8px;
+  }
+  .player-chip{ display:flex; align-items:center; gap:8px; min-width:0; }
+  .player-chip .dot{ width:16px; height:16px; border-radius:50%; flex:none; box-shadow: inset 0 -2px 3px rgba(0,0,0,.4); }
+  .player-chip.p1 .dot{ background: radial-gradient(circle at 35% 30%, var(--red-1), var(--red-2) 45%, var(--red-3) 100%); }
+  .player-chip.p2 .dot{ background: radial-gradient(circle at 35% 30%, var(--amber-1), var(--amber-2) 45%, var(--amber-3) 100%); }
+  .player-chip .name{ font-size: 12px; color: var(--cream-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .player-chip.active .name{ color: var(--brass-bright); }
+  .vs{ color: var(--cream-dim); font-size: 11px; opacity:.6; flex:none; }
+  .scores{ font-size: 13px; font-weight:700; color: var(--cream); flex:none; }
+
+  .status-line{ text-align:center; font-size: 13.5px; color: var(--cream-dim); min-height: 20px; margin-bottom: 12px; font-family: var(--font-mono); }
+  .status-line .turn-word{ color: var(--brass-bright); font-weight:700; }
+  .status-line.thinking::after{ content:""; display:inline-block; animation: dots 1.2s steps(4) infinite; }
+  @keyframes dots{ 0%{ content:""; } 25%{ content:"."; } 50%{ content:".."; } 75%{ content:"..."; } 100%{ content:""; } }
+
+  /* ---------- Skill Banner UI ---------- */
+  .skill-banner {
+    position: absolute; top: -120px; left: 14px; right: 14px;
+    background: linear-gradient(135deg, #7c2d12, #9a3412);
+    border: 2px solid var(--brass-bright); border-radius: 12px; padding: 14px;
+    text-align: center; z-index: 40; box-shadow: 0 12px 28px rgba(0,0,0,.6);
+    transition: top 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    color: white;
+  }
+  .skill-banner.show { top: 14px; }
+  .skill-banner h4 { margin: 0 0 4px; font-size: 16px; letter-spacing: 0.05em; font-family: var(--font-display); color: var(--amber-2); }
+  .skill-banner p { margin: 0; font-size: 13px; color: var(--cream-dim); }
+
+  /* ---------- Board ---------- */
+  .board-wrap{ width: 100%; max-width: 460px; margin: 0 auto; position: relative; }
+  .preview-row{ display:grid; grid-template-columns: repeat(7, 1fr); height: clamp(28px, 7vw, 40px); margin-bottom: 6px; }
+  .preview-cell{ display:flex; align-items:center; justify-content:center; }
+  .preview-cell .ghost{ width: 70%; aspect-ratio:1; border-radius:50%; opacity:0; transition: opacity .12s ease; }
+  .preview-cell.show .ghost{ opacity:.5; }
+  .preview-cell.p1 .ghost{ background: radial-gradient(circle at 35% 30%, var(--red-1), var(--red-2) 45%, var(--red-3) 100%); }
+  .preview-cell.p2 .ghost{ background: radial-gradient(circle at 35% 30%, var(--amber-1), var(--amber-2) 45%, var(--amber-3) 100%); }
+
+  .board-frame{
+    position:relative; background:linear-gradient(145deg, #3b82f6, #2563eb, #1d4ed8);
+    border-radius:16px; padding:clamp(8px,2.4vw,14px); box-shadow: var(--shadow-deep), inset 0 1px 0 rgba(255,255,255,.08);
+    transition: box-shadow 0.4s ease;
+  }
+  .board{
+    position:relative; width:100%; aspect-ratio: 7 / 6; border-radius: 10px; overflow:hidden;
+    background: linear-gradient(160deg, #0c1310, #060a08); box-shadow: inset 0 4px 14px rgba(0,0,0,.6);
+  }
+  .holes-grid{ position:absolute; inset: 0; display:grid; grid-template-columns: repeat(7, 1fr); grid-template-rows: repeat(6, 1fr); padding: 3%; gap: 0; }
+  .hole{ margin: 7%; border-radius:50%; background: radial-gradient(circle at 35% 28%, var(--felt-2), var(--felt) 72%); box-shadow: inset 0 3px 6px rgba(0,0,0,.75), inset 0 -1px 0 rgba(255,255,255,.04); }
+  .pieces-layer{ position:absolute; inset:0; padding: 3%; pointer-events:none; }
+  
+  .piece{
+    position:absolute; width: calc((100% / 7) - 0%); height: calc((100% / 6) - 0%);
+    top: calc((100% / 6) * var(--row)); left: calc((100% / 7) * var(--col));
+    transition: top .55s cubic-bezier(.32,1.6,.5,1);
+  }
+  .piece .disc{
+    position:absolute; inset: 11%; border-radius:50%;
+    box-shadow: inset 0 -5px 7px rgba(0,0,0,.45), inset 0 2px 3px rgba(255,255,255,.25), 0 4px 8px rgba(0,0,0,.5);
+    transition: background 0.5s ease, box-shadow 0.4s ease, transform 0.4s ease;
+  }
+  .piece.p1 .disc{ background: radial-gradient(circle at 35% 28%, var(--red-1), var(--red-2) 45%, var(--red-3) 100%); }
+  .piece.p2 .disc{ background: radial-gradient(circle at 35% 28%, var(--amber-1), var(--amber-2) 45%, var(--amber-3) 100%); }
+  
+  /* ---------- Skill System Animation Modifiers ---------- */
+  .illusion-red .piece .disc { background: radial-gradient(circle at 35% 28%, var(--red-1), var(--red-2) 45%, var(--red-3) 100%) !important; }
+  .illusion-yellow .piece .disc { background: radial-gradient(circle at 35% 28%, var(--amber-1), var(--amber-2) 45%, var(--amber-3) 100%) !important; }
+
+  .pulse-target .disc { animation: pulseGlow 0.6s ease infinite alternate; }
+  @keyframes pulseGlow {
+    from { box-shadow: 0 0 4px white, inset 0 -5px 7px rgba(0,0,0,.45); }
+    to { box-shadow: 0 0 20px 6px #ef4444, inset 0 -5px 7px rgba(0,0,0,.45); }
+  }
+  .vanish-out .disc { transform: scale(0); opacity: 0; }
+
+  .glow-white .disc { box-shadow: 0 0 22px 8px white, inset 0 -5px 7px rgba(0,0,0,.45) !important; }
+  .flip-piece .disc { transform: rotateY(180deg); }
+
+  .col-targets{ position:absolute; inset:0; display:grid; grid-template-columns: repeat(7, 1fr); }
+  .col-target{ background: transparent; border: none; transition: background .15s ease; position: relative; }
+  .col-target:hover:not(:disabled):not(.blocked){ background: rgba(243,233,211,.05); }
+  .col-target:disabled{ cursor:not-allowed; }
+  
+  .col-target.blocked::after {
+    content: "⛔"; position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    font-size: clamp(20px, 5vw, 32px); background: rgba(239, 68, 68, 0.25); animation: fadeIn 0.3s ease forwards;
+  }
+  @keyframes fadeIn { from{ opacity:0; } to{ opacity:1; } }
+
+  .shake { animation: shakeAnim 0.4s ease; }
+  @keyframes shakeAnim {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-8px); }
+    40%, 80% { transform: translateX(8px); }
+  }
+
+  .piece.win .disc{ animation: winGlow 1s ease-in-out infinite alternate; }
+  @keyframes winGlow{
+    from{ box-shadow: inset 0 -5px 7px rgba(0,0,0,.45), inset 0 2px 3px rgba(255,255,255,.25), 0 0 6px 2px rgba(240,207,102,.5); }
+    to{ box-shadow: inset 0 -5px 7px rgba(0,0,0,.45), inset 0 2px 3px rgba(255,255,255,.25), 0 0 18px 8px rgba(240,207,102,.95); }
+  }
+
+  /* ---------- Player Controlled Skill Selection UI ---------- */
+  .pieces-layer.skill-active { pointer-events: auto; z-index: 10; }
+  .pieces-layer.skill-active .piece.selectable-target { cursor: crosshair; }
+  .pieces-layer.skill-active .piece.selectable-target .disc { 
+    box-shadow: 0 0 10px 2px rgba(255,255,255,0.4), inset 0 -5px 7px rgba(0,0,0,.45); 
+  }
+  .pieces-layer.skill-active .piece.selectable-target:hover .disc { 
+    transform: scale(1.08); 
+    box-shadow: 0 0 16px 6px rgba(255,255,255,0.6), inset 0 -5px 7px rgba(0,0,0,.45); 
+  }
+  
+  .pieces-layer.skill-active .piece.non-selectable { 
+    cursor: not-allowed; 
+    opacity: 0.5;
+    filter: grayscale(0.5);
+  }
+  .pieces-layer.skill-active .piece.non-selectable:hover .disc { 
+    transform: none; 
+    box-shadow: inset 0 -5px 7px rgba(0,0,0,.45), inset 0 2px 3px rgba(255,255,255,.25), 0 4px 8px rgba(0,0,0,.5); 
+  }
+  
+  .col-targets.skill-active { z-index: 10; }
+  .col-targets.skill-active .col-target:not(:disabled):not(.full) { cursor: crosshair; }
+  .col-targets.skill-active .col-target.full { cursor: not-allowed; }
+  .col-targets.skill-active .col-target.skill-selectable { background: rgba(255,255,255,0.08); }
+  .col-targets.skill-active .col-target.skill-selectable:hover { background: rgba(255,255,255,0.18); }
+
+  /* ---------- Modal overlay ---------- */
+  .modal-backdrop{
+    position:fixed; inset:0; background: rgba(6,9,7,.72);
+    display:flex; align-items:center; justify-content:center;
+    padding: 20px; z-index: 50; opacity:0; pointer-events:none; transition: opacity .2s ease;
+  }
+  .modal-backdrop.show{ opacity:1; pointer-events:auto; }
+  .modal{ width: 100%; max-width: 420px; text-align:center; animation: popIn .3s cubic-bezier(.3,1.4,.5,1) both; }
+  @keyframes popIn{ from{ transform: scale(.9); opacity:0; } to{ transform: scale(1); opacity:1; } }
+  .modal .result-mark{ font-size: 38px; margin-bottom: 6px; }
+  .modal h2{ font-family: var(--font-display); margin: 0 0 6px; font-size: 26px; }
+  .modal p{ color: var(--cream-dim); font-size: 14px; margin: 0 0 4px; }
+
+  .intro-list{ text-align:left; margin: 16px 0 0; padding:0; list-style:none; display:flex; flex-direction:column; gap:12px; }
+  .intro-list li{ display:flex; gap:10px; font-size: 13.5px; color: var(--cream-dim); line-height:1.5; }
+  .intro-list .num{
+    flex:none; width:24px; height:24px; border-radius:50%;
+    background: linear-gradient(180deg, var(--brass-bright), var(--brass-dim));
+    color: var(--ink); font-family: var(--font-mono); font-weight:700; font-size: 12px;
+    display:flex; align-items:center; justify-content:center;
+  }
+
+  .legend{ display:flex; align-items:center; justify-content:center; gap:18px; margin-top:18px; font-size:12px; color: var(--cream-dim); }
+  .legend span{ display:flex; align-items:center; gap:6px; }
+  .legend .dot{ width:14px; height:14px; border-radius:50%; }
+  .legend .dot.red{ background: radial-gradient(circle at 35% 30%, var(--red-1), var(--red-2) 45%, var(--red-3) 100%); }
+  .legend .dot.amber{ background: radial-gradient(circle at 35% 30%, var(--amber-1), var(--amber-2) 45%, var(--amber-3) 100%); }
+
+  @media (max-width: 420px){
+    .scoreboard{ font-size: 11px; padding: 10px 12px; }
+    .player-chip .name{ max-width: 78px; }
+    .diff-grid{ grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+
+  <!-- ============ MAIN MENU ============ -->
+  <section class="screen active" id="screen-menu" aria-label="Main menu">
+    <div class="panel">
+      <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
+
+      <div class="ambient-wrap" aria-hidden="true">
+        <div class="ambient-grid" id="ambientGrid"></div>
+      </div>
+
+      <p class="eyebrow">Est. at this very table</p>
+      <h1 class="title">Unfair Four</h1>
+      <p class="tagline">Classic strategy meets chaotic disruption.</p>
+
+      <div class="btn-row">
+        <button class="plaque-btn" id="btnPlay">▶ Play</button>
+        <button class="plaque-btn ghost" id="btnHowTo">How to Play</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ MODE SELECT ============ -->
+  <section class="screen" id="screen-mode" aria-label="Choose match type">
+    <div class="panel">
+      <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
+      <button class="back-link" data-back="screen-menu">← Back</button>
+      <h2 class="subtitle">Choose Your Match</h2>
+      <p class="subtext">Two seats at the table, or one against the house.</p>
+
+      <div class="btn-row">
+        <button class="option-btn" id="btnPvp">
+          <span class="opt-title">Player vs Player</span>
+          <span class="opt-desc">Pass the table — red moves first.</span>
+        </button>
+        <button class="option-btn" id="btnPvc">
+          <span class="opt-title">Player vs Computer</span>
+          <span class="opt-desc">Pick a difficulty and test your nerve.</span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ DIFFICULTY SELECT ============ -->
+  <section class="screen" id="screen-difficulty" aria-label="Choose difficulty">
+    <div class="panel">
+      <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
+      <button class="back-link" data-back="screen-mode">← Back</button>
+      <h2 class="subtitle">Choose Difficulty</h2>
+      <p class="subtext">Higher difficulty thinks further ahead.</p>
+
+      <div class="diff-grid">
+        <button class="diff-btn" data-d="easy">Easy
+          <div class="dots"><span class="on"></span><span></span><span></span><span></span></div>
+        </button>
+        <button class="diff-btn" data-d="medium">Medium
+          <div class="dots"><span class="on"></span><span class="on"></span><span></span><span></span></div>
+        </button>
+        <button class="diff-btn" data-d="hard">Hard
+          <div class="dots"><span class="on"></span><span class="on"></span><span class="on"></span><span></span></div>
+        </button>
+        <button class="diff-btn" data-d="extreme">Extreme
+          <div class="dots"><span class="on"></span><span class="on"></span><span class="on"></span><span class="on"></span></div>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ GAME SCREEN ============ -->
+  <section class="screen" id="screen-game" aria-label="Game board">
+    <div class="panel">
+      <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
+
+      <!-- Skill Banner Overlay container -->
+      <div class="skill-banner" id="skillBanner">
+        <h4 id="skillTitle">⚡ Skill Activated!</h4>
+        <p id="skillDesc">Applying special map modifier...</p>
+      </div>
+
+      <div class="game-header">
+        <div class="brand"><span class="mark">⚜</span><h3>Unfair Four</h3></div>
+        <div class="header-actions">
+          <button class="plaque-btn ghost small" id="btnRestart">↺ Restart</button>
+          <button class="plaque-btn ghost small" data-back="screen-menu">Menu</button>
+        </div>
+      </div>
+
+      <div class="scoreboard">
+        <div class="player-chip p1" id="chipP1">
+          <span class="dot"></span><span class="name" id="nameP1">Player 1</span>
+        </div>
+        <div class="scores"><span id="scoreP1">0</span><span class="vs"> — </span><span id="scoreP2">0</span></div>
+        <div class="player-chip p2" id="chipP2">
+          <span class="name" id="nameP2">Player 2</span><span class="dot"></span>
+        </div>
+      </div>
+
+      <p class="status-line" id="statusLine">Red opens the table.</p>
+
+      <div class="board-wrap">
+        <div class="preview-row" id="previewRow"></div>
+        <div class="board-frame" id="boardFrame">
+          <div class="board" id="board">
+            <div class="holes-grid" id="holesGrid"></div>
+            <div class="pieces-layer" id="piecesLayer"></div>
+            <div class="col-targets" id="colTargets"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="legend">
+        <span><span class="dot red"></span>Player 1</span>
+        <span><span class="dot amber"></span><span id="legendP2Label">Player 2</span></span>
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<!-- ============ HOW TO PLAY MODAL ============ -->
+<div class="modal-backdrop" id="introBackdrop">
+  <div class="modal panel" style="max-width:440px;">
+    <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
+    <h2>How to Play</h2>
+    <p id="introShortStatement" style="font-weight: 500; text-align: left; margin-bottom: 12px; color: var(--brass-bright); line-height: 1.4;"></p>
+    <ol class="intro-list">
+      <li><span class="num">1</span>Take turns clicking or tapping a column to drop your disc into the lowest open slot.</li>
+      <li><span class="num">2</span>Player 1 plays garnet red and always opens the table.</li>
+      <li><span class="num">3</span>Be first to line up four discs in a row — across, up-and-down, or diagonally — to win.</li>
+      <li><span class="num">4</span>If all 42 slots fill with no line of four, the table ends in a draw.</li>
+    </ol>
+    <div class="btn-row"><button class="plaque-btn" id="btnCloseIntro">Got it</button></div>
+  </div>
+</div>
+
+<!-- ============ RESULT MODAL ============ -->
+<div class="modal-backdrop" id="resultBackdrop">
+  <div class="modal panel">
+    <span class="corner tl"></span><span class="corner tr"></span><span class="corner bl"></span><span class="corner br"></span>
+    <div class="result-mark" id="resultMark">🏆</div>
+    <h2 id="resultTitle">Player 1 Wins!</h2>
+    <p id="resultSub">Four in a row, fair and square.</p>
+    <div class="btn-row cols-2">
+      <button class="plaque-btn" id="btnPlayAgain">Play Again</button>
+      <button class="plaque-btn ghost" data-back="screen-menu" id="btnToMenu">Main Menu</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ============================================================
+     CONSTANTS & STATE
+  ============================================================ */
+  var ROWS = 6, COLS = 7;
+  var EMPTY = 0, P1 = 1, P2 = 2;
+
+  var state = {
+    board: null,
+    mode: null,        
+    difficulty: null,  
+    current: P1,
+    over: false,
+    locked: false,      
+    scores: { 1: 0, 2: 0 },
+    
+    // Skill Engine Configuration
+    skillThreshold: null,
+    skillTriggered: false,
+    pendingSkill: false,
+    activeMirage: null,     // 'red' | 'yellow' | null
+    blockedColumn: null,    // integer | null
+    blockedTargetPlayer: null,
+    
+    // Manual Skill Selection Engine
+    skillSelectionActive: false,
+    activeSkillType: null,
+    skillCallback: null
+  };
+
+  var DIFF_LABEL = { easy: "Easy", medium: "Medium", hard: "Hard", extreme: "Extreme" };
+  var INTRO_STATEMENT = "Unfair Four twists the classic game with a one‑time skill that strikes when the board is around 55% full (21–25 pieces). The skill forces the current player to use it instead of a normal move, then passes the turn. Effects range from board‑wide color illusions and vanishing pieces to column blocks and rare piece conversion. Only one skill appears per match – expect the unexpected!";
+
+  /* ============================================================
+     SOUND EFFECTS (procedural, no audio files)
+  ============================================================ */
+  var audioCtx = null;
+  function getAudioCtx(){
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === "suspended") audioCtx.resume();
+    return audioCtx;
+  }
+
+  function playTone(freq, startTime, duration, type, peakGain, glideTo){
+    var ctx = getAudioCtx();
+    var osc = ctx.createOscillator();
+    var gain = ctx.createGain();
+    osc.type = type;
+    osc.frequency.setValueAtTime(freq, startTime);
+    if (glideTo !== undefined) osc.frequency.exponentialRampToValueAtTime(glideTo, startTime + duration);
+    gain.gain.setValueAtTime(0, startTime);
+    gain.gain.linearRampToValueAtTime(peakGain, startTime + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.001, startTime + duration);
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    osc.start(startTime);
+    osc.stop(startTime + duration + 0.05);
+  }
+
+  // Piece released into the column — a short descending "whoosh"
+  function playDropSound(){
+    var now = getAudioCtx().currentTime;
+    playTone(500, now, 0.14, "sine", 0.12, 260);
+  }
+
+  // Piece lands at the bottom of the stack — a soft wooden "clink", timed to the .55s drop animation
+  function playLandSound(){
+    var now = getAudioCtx().currentTime;
+    playTone(180, now, 0.1, "triangle", 0.22);
+    playTone(120, now + 0.02, 0.12, "sine", 0.16);
+  }
+
+  // Four in a row detected — a short triumphant ascending fanfare
+  function playWinSound(){
+    var now = getAudioCtx().currentTime;
+    var notes = [523.25, 659.25, 783.99, 1046.5];
+    notes.forEach(function(f, i){ playTone(f, now + i * 0.11, 0.28, "square", 0.15); });
+  }
+
+  /* ============================================================
+     BOARD LOGIC
+  ============================================================ */
+  function newBoard(){
+    var b = [];
+    for (var r = 0; r < ROWS; r++) b.push(new Array(COLS).fill(EMPTY));
+    return b;
+  }
+  function cloneBoard(b){ return b.map(function(row){ return row.slice(); }); }
+  function isValidCol(b, c){ 
+    if (state.blockedColumn !== null && state.current === state.blockedTargetPlayer && c === state.blockedColumn) {
+      return false; 
+    }
+    return b[0][c] === EMPTY; 
+  }
+  function nextOpenRow(b, c){
+    for (var r = ROWS - 1; r >= 0; r--){ if (b[r][c] === EMPTY) return r; }
+    return -1;
+  }
+  function dropPiece(b, r, c, piece){ b[r][c] = piece; }
+  function validCols(b){
+    var v = [];
+    for (var c = 0; c < COLS; c++) if (isValidCol(b, c)) v.push(c);
+    return v;
+  }
+  function isBoardFull(b){
+    for (var r = 0; r < ROWS; r++) for (var c = 0; c < COLS; c++) if (b[r][c] === EMPTY) return false;
+    return true;
+  }
+
+  function winningCells(b, piece){
+    var r, c;
+    for (r = 0; r < ROWS; r++){
+      for (c = 0; c <= COLS - 4; c++){
+        if (b[r][c]===piece && b[r][c+1]===piece && b[r][c+2]===piece && b[r][c+3]===piece)
+          return [[r,c],[r,c+1],[r,c+2],[r,c+3]];
+      }
+    }
+    for (c = 0; c < COLS; c++){
+      for (r = 0; r <= ROWS - 4; r++){
+        if (b[r][c]===piece && b[r+1][c]===piece && b[r+2][c]===piece && b[r+3][c]===piece)
+          return [[r,c],[r+1,c],[r+2,c],[r+3,c]];
+      }
+    }
+    for (r = 0; r <= ROWS - 4; r++){
+      for (c = 0; c <= COLS - 4; c++){
+        if (b[r][c]===piece && b[r+1][c+1]===piece && b[r+2][c+2]===piece && b[r+3][c+3]===piece)
+          return [[r,c],[r+1,c+1],[r+2,c+2],[r+3,c+3]];
+      }
+    }
+    for (r = 0; r <= ROWS - 4; r++){
+      for (c = 3; c < COLS; c++){
+        if (b[r][c]===piece && b[r+1][c-1]===piece && b[r+2][c-2]===piece && b[r+3][c-3]===piece)
+          return [[r,c],[r+1,c-1],[r+2,c-2],[r+3,c-3]];
+      }
+    }
+    return null;
+  }
+
+  function isTerminal(b){
+    return !!winningCells(b, P1) || !!winningCells(b, P2) || validCols(b).length === 0;
+  }
+
+  function evaluateWindow(win, piece, opp){
+    var score = 0;
+    var cp = 0, ce = 0, co = 0, i;
+    for (i = 0; i < win.length; i++){
+      if (win[i] === piece) cp++;
+      else if (win[i] === EMPTY) ce++;
+      else if (win[i] === opp) co++;
+    }
+    if (cp === 4) score += 100;
+    else if (cp === 3 && ce === 1) score += 10;
+    else if (cp === 2 && ce === 2) score += 5;
+    if (co === 3 && ce === 1) score -= 80;
+    return score;
+  }
+
+  function scorePosition(b, piece){
+    var opp = piece === P1 ? P2 : P1;
+    var score = 0, r, c;
+    var centerCol = Math.floor(COLS / 2);
+    var centerCount = 0;
+    for (r = 0; r < ROWS; r++) if (b[r][centerCol] === piece) centerCount++;
+    score += centerCount * 6;
+
+    for (r = 0; r < ROWS; r++)
+      for (c = 0; c <= COLS - 4; c++)
+        score += evaluateWindow([b[r][c], b[r][c+1], b[r][c+2], b[r][c+3]], piece, opp);
+
+    for (c = 0; c < COLS; c++)
+      for (r = 0; r <= ROWS - 4; r++)
+        score += evaluateWindow([b[r][c], b[r+1][c], b[r+2][c], b[r+3][c]], piece, opp);
+
+    for (r = 0; r <= ROWS - 4; r++)
+      for (c = 0; c <= COLS - 4; c++)
+        score += evaluateWindow([b[r][c], b[r+1][c+1], b[r+2][c+2], b[r+3][c+3]], piece, opp);
+
+    for (r = 0; r <= ROWS - 4; r++)
+      for (c = 3; c < COLS; c++)
+        score += evaluateWindow([b[r][c], b[r+1][c-1], b[r+2][c-2], b[r+3][c-3]], piece, opp);
+
+    return score;
+  }
+
+  function minimax(b, depth, alpha, beta, maximizing){
+    var valid = validCols(b);
+    var terminal = isTerminal(b);
+    if (depth === 0 || terminal){
+      if (terminal){
+        if (winningCells(b, P2)) return [null, 1000000];
+        if (winningCells(b, P1)) return [null, -1000000];
+        return [null, 0];
+      }
+      return [null, scorePosition(b, P2)];
+    }
+    var col, row, copy, newScore, i;
+    if (maximizing){
+      var value = -Infinity;
+      var bestCol = valid[Math.floor(Math.random() * valid.length)];
+      for (i = 0; i < valid.length; i++){
+        col = valid[i];
+        row = nextOpenRow(b, col);
+        copy = cloneBoard(b);
+        dropPiece(copy, row, col, P2);
+        newScore = minimax(copy, depth - 1, alpha, beta, false)[1];
+        if (newScore > value){ value = newScore; bestCol = col; }
+        alpha = Math.max(alpha, value);
+        if (alpha >= beta) break;
+      }
+      return [bestCol, value];
+    } else {
+      var value2 = Infinity;
+      var bestCol2 = valid[Math.floor(Math.random() * valid.length)];
+      for (i = 0; i < valid.length; i++){
+        col = valid[i];
+        row = nextOpenRow(b, col);
+        copy = cloneBoard(b);
+        dropPiece(copy, row, col, P1);
+        newScore = minimax(copy, depth - 1, alpha, beta, true)[1];
+        if (newScore < value2){ value2 = newScore; bestCol2 = col; }
+        beta = Math.min(beta, value2);
+        if (alpha >= beta) break;
+      }
+      return [bestCol2, value2];
+    }
+  }
+
+  function pickEasyMove(b){
+    var valid = validCols(b);
+    return valid[Math.floor(Math.random() * valid.length)];
+  }
+
+  function pickAiMove(b, difficulty){
+    if (difficulty === "easy") return pickEasyMove(b);
+    if (difficulty === "medium") return minimax(b, 2, -Infinity, Infinity, true)[0];
+    if (difficulty === "hard") return minimax(b, 4, -Infinity, Infinity, true)[0];
+    return minimax(b, 5, -Infinity, Infinity, true)[0];
+  }
+
+  /* ============================================================
+     DOM REFERENCES
+  ============================================================ */
+  var el = {
+    screens: document.querySelectorAll(".screen"),
+    btnPlay: document.getElementById("btnPlay"),
+    btnHowTo: document.getElementById("btnHowTo"),
+    btnPvp: document.getElementById("btnPvp"),
+    btnPvc: document.getElementById("btnPvc"),
+    btnRestart: document.getElementById("btnRestart"),
+    diffButtons: document.querySelectorAll(".diff-btn"),
+    backButtons: document.querySelectorAll("[data-back]"),
+    introBackdrop: document.getElementById("introBackdrop"),
+    introShortStatement: document.getElementById("introShortStatement"),
+    btnCloseIntro: document.getElementById("btnCloseIntro"),
+    resultBackdrop: document.getElementById("resultBackdrop"),
+    resultMark: document.getElementById("resultMark"),
+    resultTitle: document.getElementById("resultTitle"),
+    resultSub: document.getElementById("resultSub"),
+    btnPlayAgain: document.getElementById("btnPlayAgain"),
+    holesGrid: document.getElementById("holesGrid"),
+    piecesLayer: document.getElementById("piecesLayer"),
+    colTargets: document.getElementById("colTargets"),
+    previewRow: document.getElementById("previewRow"),
+    statusLine: document.getElementById("statusLine"),
+    scoreP1: document.getElementById("scoreP1"),
+    scoreP2: document.getElementById("scoreP2"),
+    nameP1: document.getElementById("nameP1"),
+    nameP2: document.getElementById("nameP2"),
+    chipP1: document.getElementById("chipP1"),
+    chipP2: document.getElementById("chipP2"),
+    legendP2Label: document.getElementById("legendP2Label"),
+    ambientGrid: document.getElementById("ambientGrid"),
+    boardFrame: document.getElementById("boardFrame"),
+    board: document.getElementById("board"),
+    skillBanner: document.getElementById("skillBanner"),
+    skillTitle: document.getElementById("skillTitle"),
+    skillDesc: document.getElementById("skillDesc")
+  };
+
+  el.introShortStatement.textContent = INTRO_STATEMENT;
+
+  function resetScores() {
+    state.scores[1] = 0;
+    state.scores[2] = 0;
+    updateScoreboard();
+  }
+
+  function showScreen(id){
+    el.resultBackdrop.classList.remove("show");
+    el.introBackdrop.classList.remove("show");
+    el.screens.forEach(function(s){ s.classList.toggle("active", s.id === id); });
+    state.locked = false;
+    if (id === "screen-menu") {
+      resetScores();
+    }
+  }
+
+  el.backButtons.forEach(function(btn){
+    btn.addEventListener("click", function(){ 
+      showScreen(btn.getAttribute("data-back")); 
+    });
+  });
+
+  el.btnHowTo.addEventListener("click", function(){ el.introBackdrop.classList.add("show"); });
+  el.btnCloseIntro.addEventListener("click", function(){ el.introBackdrop.classList.remove("show"); });
+  el.introBackdrop.addEventListener("click", function(e){ if (e.target === el.introBackdrop) el.introBackdrop.classList.remove("show"); });
+  el.btnPlay.addEventListener("click", function(){ showScreen("screen-mode"); });
+
+  el.btnPvp.addEventListener("click", function(){ 
+    resetScores();
+    state.mode = "pvp"; 
+    state.difficulty = null; 
+    startGame(); 
+  });
+  el.btnPvc.addEventListener("click", function(){ showScreen("screen-difficulty"); });
+
+  el.diffButtons.forEach(function(btn){
+    btn.addEventListener("click", function(){
+      resetScores();
+      state.mode = "pvc";
+      state.difficulty = btn.getAttribute("data-d");
+      startGame();
+    });
+  });
+
+  el.btnRestart.addEventListener("click", function(){ resetBoardKeepSettings(); });
+  el.btnPlayAgain.addEventListener("click", function(){ el.resultBackdrop.classList.remove("show"); resetBoardKeepSettings(); });
+
+  /* ============================================================
+     BOARD RENDERING
+  ============================================================ */
+  function buildHoles(){
+    el.holesGrid.innerHTML = "";
+    for (var i = 0; i < ROWS * COLS; i++){
+      var hole = document.createElement("div");
+      hole.className = "hole";
+      el.holesGrid.appendChild(hole);
+    }
+  }
+
+  function buildColumnTargets(){
+    el.colTargets.innerHTML = "";
+    for (var c = 0; c < COLS; c++){
+      var btn = document.createElement("button");
+      btn.className = "col-target";
+      btn.type = "button";
+      btn.setAttribute("aria-label", "Drop in column " + (c + 1));
+      btn.dataset.col = c;
+      btn.addEventListener("click", onColumnClick);
+      btn.addEventListener("mouseenter", function(){ setPreview(parseInt(this.dataset.col, 10)); });
+      btn.addEventListener("mouseleave", clearPreview);
+      el.colTargets.appendChild(btn);
+    }
+  }
+
+  function buildPreviewRow(){
+    el.previewRow.innerHTML = "";
+    for (var c = 0; c < COLS; c++){
+      var cell = document.createElement("div");
+      cell.className = "preview-cell";
+      cell.dataset.col = c;
+      var ghost = document.createElement("div");
+      ghost.className = "ghost";
+      cell.appendChild(ghost);
+      el.previewRow.appendChild(cell);
+    }
+  }
+
+  function setPreview(col){
+    if (state.over || state.locked || state.skillSelectionActive) return;
+    if (state.blockedColumn === col && state.current === state.blockedTargetPlayer) return;
+    var cells = el.previewRow.children;
+    for (var i = 0; i < cells.length; i++){
+      cells[i].classList.toggle("show", i === col);
+      cells[i].classList.remove("p1", "p2");
+      if (i === col) cells[i].classList.add(state.current === P1 ? "p1" : "p2");
+    }
+  }
+  
+  function clearPreview(){
+    var cells = el.previewRow.children;
+    for (var i = 0; i < cells.length; i++) cells[i].classList.remove("show");
+  }
+
+  function placePieceEl(row, col, piece, isWinning){
+    var p = document.createElement("div");
+    p.className = "piece p" + piece + (isWinning ? " win" : "");
+    p.style.setProperty("--col", col);
+    p.style.setProperty("--row", -1); 
+    p.setAttribute("data-row", row);
+    p.setAttribute("data-col", col);
+    var disc = document.createElement("div");
+    disc.className = "disc";
+    p.appendChild(disc);
+    el.piecesLayer.appendChild(p);
+    
+    void p.offsetWidth;
+    playDropSound();
+    requestAnimationFrame(function(){ p.style.setProperty("--row", row); });
+    setTimeout(playLandSound, 550);
+    return p;
+  }
+
+  function findPieceEl(r, c) {
+    return el.piecesLayer.querySelector('.piece[data-row="' + r + '"][data-col="' + c + '"]');
+  }
+
+  /* ============================================================
+     GAME FLOW
+  ============================================================ */
+  function startGame(){
+    state.board = newBoard();
+    state.current = P1;
+    state.over = false;
+    state.locked = false;
+    
+    // Setup Unfair Four Engine parameters
+    state.skillThreshold = Math.floor(Math.random() * (25 - 21 + 1)) + 21;
+    state.skillTriggered = false;
+    state.pendingSkill = false;
+    state.activeMirage = null;
+    state.blockedColumn = null;
+    state.blockedTargetPlayer = null;
+    state.skillSelectionActive = false;
+    state.activeSkillType = null;
+    state.skillCallback = null;
+
+    el.board.className = "board";
+    el.piecesLayer.innerHTML = "";
+    el.piecesLayer.className = "pieces-layer";
+    buildHoles();
+    buildColumnTargets();
+    buildPreviewRow();
+
+    if (state.mode === "pvp"){
+      el.nameP1.textContent = "Player 1";
+      el.nameP2.textContent = "Player 2";
+      el.legendP2Label.textContent = "Player 2";
+    } else {
+      el.nameP1.textContent = "You";
+      el.nameP2.textContent = "Computer · " + DIFF_LABEL[state.difficulty];
+      el.legendP2Label.textContent = "Computer";
+    }
+
+    updateScoreboard();
+    updateStatus("Red opens the table.");
+    showScreen("screen-game");
+  }
+
+  function resetBoardKeepSettings(){ startGame(); }
+
+  function updateScoreboard(){
+    el.scoreP1.textContent = state.scores[1];
+    el.scoreP2.textContent = state.scores[2];
+    el.chipP1.classList.toggle("active", state.current === P1 && !state.over);
+    el.chipP2.classList.toggle("active", state.current === P2 && !state.over);
+  }
+
+  function updateStatus(text, thinking){
+    el.statusLine.textContent = text;
+    el.statusLine.classList.toggle("thinking", !!thinking);
+  }
+
+  function currentPlayerName(){
+    if (state.mode === "pvp") return state.current === P1 ? "Player 1" : "Player 2";
+    return state.current === P1 ? "You" : "the computer";
+  }
+
+  function getPiecesCount() {
+    var count = 0;
+    for (var r = 0; r < ROWS; r++) {
+      for (var c = 0; c < COLS; c++) {
+        if (state.board[r][c] !== EMPTY) count++;
+      }
+    }
+    return count;
+  }
+
+  function onColumnClick(e){
+    var col = parseInt(e.currentTarget.dataset.col, 10);
+    
+    // Handle Player-Controlled Blockade Selection Target
+    if (state.skillSelectionActive) {
+      if (state.activeSkillType === "blockade") {
+        if (state.board[0][col] !== EMPTY) {
+          // Reject full columns with an error shake
+          var btn = e.currentTarget;
+          btn.classList.add("shake");
+          setTimeout(function(){ btn.classList.remove("shake"); }, 400);
+          return;
+        }
+        var cb = state.skillCallback;
+        teardownManualSelection();
+        executeBlockade(col, state.current === P1 ? P2 : P1, cb);
+      }
+      return; // Force all other turn interactions inactive during targeting
+    }
+
+    if (state.over || state.locked) return;
+    
+    // Check if column is blocked by skill
+    if (state.blockedColumn === col && state.current === state.blockedTargetPlayer) {
+      var targetBtn = e.currentTarget;
+      targetBtn.classList.add("shake");
+      setTimeout(function(){ targetBtn.classList.remove("shake"); }, 400);
+      return; 
+    }
+
+    if (state.mode === "pvc" && state.current === P2) return; 
+    attemptMove(col);
+  }
+
+  function attemptMove(col){
+    if (!isValidCol(state.board, col)) return;
+    var row = nextOpenRow(state.board, col);
+    dropPiece(state.board, row, col, state.current);
+    clearPreview();
+
+    var win = winningCells(state.board, state.current);
+    placePieceEl(row, col, state.current, !!win);
+
+    // Fade out Monochrome Mirage if the active duration finishes
+    if (state.activeMirage !== null) {
+      el.board.classList.remove("illusion-red", "illusion-yellow");
+      state.activeMirage = null;
+    }
+
+    // Lift column blockade constraints if the targeted player turn wraps up
+    if (state.blockedColumn !== null && state.current === state.blockedTargetPlayer) {
+      var blockEl = el.colTargets.querySelector('.col-target[data-col="' + state.blockedColumn + '"]');
+      if (blockEl) blockEl.classList.remove("blocked");
+      state.blockedColumn = null;
+      state.blockedTargetPlayer = null;
+    }
+
+    if (win){
+      endMatchWithWin(win);
+      return;
+    }
+
+    if (isBoardFull(state.board)){
+      endMatchWithDraw();
+      return;
+    }
+
+    // Evaluate Unfair Four Skill triggers based on map composition metrics
+    var currentPieces = getPiecesCount();
+    if (currentPieces === state.skillThreshold && !state.skillTriggered) {
+      state.pendingSkill = true;
+    }
+
+    state.current = state.current === P1 ? P2 : P1;
+    updateScoreboard();
+    continueGameSequence();
+  }
+
+  function continueGameSequence() {
+    if (state.pendingSkill) {
+      state.pendingSkill = false;
+      state.skillTriggered = true;
+      executeSkillSequence();
+      return;
+    }
+
+    if (state.over) return;
+
+    if (state.mode === "pvc" && state.current === P2){
+      updateStatus("Computer is thinking", true);
+      state.locked = true;
+      setTimeout(runAiTurn, 550);
+    } else {
+      var turnMsg = (state.current === P1 ? "Red" : (state.mode === "pvp" ? "Yellow" : "Your")) + (state.mode==="pvc" && state.current===P1 ? " turn." : "'s turn.");
+      if (state.activeMirage) {
+        turnMsg = "👁️ " + (state.activeMirage === "red" ? "Red" : "Yellow") + " Mirage active! " + turnMsg;
+      }
+      updateStatus(turnMsg);
+      state.locked = false;
+    }
+  }
+
+  function endMatchWithWin(win, skillType) {
+    state.over = true;
+    state.locked = true;
+    playWinSound();
+    tagWinningPieces(win);
+    state.scores[state.current]++;
+    updateScoreboard();
+    setTimeout(function(){ announceResult("win", skillType); }, 600);
+
+    if (skillType === "vanishing" || skillType === "infiltrator") {
+       updateStatus(currentPlayerName() + " wins via skill!");
+    } else {
+       updateStatus(currentPlayerName() + " connects four!");
+    }
+  }
+
+  function endMatchWithDraw() {
+    state.over = true;
+    state.locked = true;
+    updateScoreboard();
+    setTimeout(function(){ announceResult("draw"); }, 400);
+    updateStatus("The table is full.");
+  }
+
+  function runAiTurn(){
+    if (state.over) return;
+    var col = pickAiMove(state.board, state.difficulty);
+    if (col === null || col === undefined || !isValidCol(state.board, col)){
+      var valid = validCols(state.board);
+      col = valid.length ? valid[0] : null;
+    }
+    state.locked = false;
+    if (col !== null) attemptMove(col);
+  }
+
+  function tagWinningPieces(winCells){
+    var children = el.piecesLayer.children;
+    winCells.forEach(function(rc){
+      for (var i = 0; i < children.length; i++){
+        var node = children[i];
+        if (parseInt(node.getAttribute("data-row"), 10) === rc[0] &&
+            parseInt(node.getAttribute("data-col"), 10) === rc[1]){
+          node.classList.add("win");
+        }
+      }
+    });
+  }
+
+  /* ============================================================
+     SKILL ENGINE IMPLEMENTATION
+  ============================================================ */
+
+  // Bind centralized event listener to piecesLayer for manual skill targeting
+  el.piecesLayer.addEventListener("click", function(e) {
+    if (!state.skillSelectionActive) return;
+    
+    var pieceEl = e.target.closest(".piece");
+    if (!pieceEl) return;
+    
+    var r = parseInt(pieceEl.getAttribute("data-row"), 10);
+    var c = parseInt(pieceEl.getAttribute("data-col"), 10);
+    var pieceOwner = state.board[r][c];
+    var opp = state.current === P1 ? P2 : P1;
+    
+    // Invalid selection: For Infiltrator and Vanishing Act, the player can only target opponent pieces.
+    if (pieceOwner !== opp) {
+      pieceEl.classList.add("shake");
+      setTimeout(function(){ pieceEl.classList.remove("shake"); }, 400);
+      return;
+    }
+    
+    if (state.activeSkillType === "vanishing") {
+      var cb = state.skillCallback;
+      teardownManualSelection();
+      executeVanishing(r, c, cb);
+    } else if (state.activeSkillType === "infiltrator") {
+      var cb2 = state.skillCallback;
+      teardownManualSelection();
+      executeInfiltrator(r, c, cb2);
+    }
+  });
+
+  function setupManualSelection(skillType, promptMsg, callback) {
+    state.skillSelectionActive = true;
+    state.activeSkillType = skillType;
+    state.skillCallback = callback;
+    state.locked = false; // Unlock to allow targeting interactions
+    
+    el.skillDesc.textContent = promptMsg;
+    
+    if (skillType === "blockade") {
+      el.colTargets.classList.add("skill-active");
+      for (var c = 0; c < COLS; c++) {
+        var btn = el.colTargets.querySelector('.col-target[data-col="' + c + '"]');
+        if (state.board[0][c] !== EMPTY) btn.classList.add("full");
+        else btn.classList.add("skill-selectable");
+      }
+    } else {
+      el.piecesLayer.classList.add("skill-active");
+      var opp = state.current === P1 ? P2 : P1;
+      
+      // Determine valid targets based on piece ownership
+      var allPieceEls = el.piecesLayer.querySelectorAll('.piece');
+      for (var i = 0; i < allPieceEls.length; i++) {
+        var pEl = allPieceEls[i];
+        var pr = parseInt(pEl.getAttribute("data-row"), 10);
+        var pc = parseInt(pEl.getAttribute("data-col"), 10);
+        
+        if (state.board[pr][pc] === opp) {
+          pEl.classList.add("selectable-target");
+        } else {
+          pEl.classList.add("non-selectable");
+        }
+      }
+    }
+  }
+
+  function teardownManualSelection() {
+    state.skillSelectionActive = false;
+    state.activeSkillType = null;
+    state.skillCallback = null;
+    state.locked = true; // Lock immediately to prevent interrupts during animation
+    
+    el.piecesLayer.classList.remove("skill-active");
+    var allPieceEls = el.piecesLayer.querySelectorAll('.piece');
+    for (var i = 0; i < allPieceEls.length; i++) {
+      allPieceEls[i].classList.remove("selectable-target", "non-selectable");
+    }
+    
+    el.colTargets.classList.remove("skill-active");
+    for (var c = 0; c < COLS; c++) {
+      var btn = el.colTargets.querySelector('.col-target[data-col="' + c + '"]');
+      if(btn) btn.classList.remove("full", "skill-selectable");
+    }
+  }
+
+  function executeBlockade(targetCol, targetPlayer, callback) {
+    state.blockedColumn = targetCol;
+    state.blockedTargetPlayer = targetPlayer;
+
+    var blockBtn = el.colTargets.querySelector('.col-target[data-col="' + targetCol + '"]');
+    if (blockBtn) blockBtn.classList.add("blocked");
+
+    el.skillDesc.textContent = "⚡ Blockade! Column " + (targetCol + 1) + " is locked for your opponent.";
+    callback();
+  }
+
+  function executeVanishing(r, c, callback) {
+    var pieceEl = findPieceEl(r, c);
+    if (!pieceEl) { callback(); return; }
+
+    pieceEl.classList.add("pulse-target");
+
+    setTimeout(function() {
+      pieceEl.classList.remove("pulse-target");
+      pieceEl.classList.add("vanish-out");
+
+      setTimeout(function() {
+        pieceEl.remove();
+
+        var shiftQueue = [];
+        for (var row = r - 1; row >= 0; row--) {
+          if (state.board[row][c] !== EMPTY) {
+            var fEl = findPieceEl(row, c);
+            if (fEl) shiftQueue.push({el: fEl, targetRow: row + 1});
+          }
+        }
+
+        shiftQueue.forEach(function(item) {
+          item.el.style.setProperty("--row", item.targetRow);
+          item.el.setAttribute("data-row", item.targetRow);
+        });
+
+        for (var row = r; row > 0; row--) {
+          state.board[row][c] = state.board[row - 1][c];
+        }
+        state.board[0][c] = EMPTY;
+
+        setTimeout(callback, 550);
+      }, 400);
+    }, 600);
+  }
+
+  function executeInfiltrator(r, c, callback) {
+    var tPieceEl = findPieceEl(r, c);
+    if (!tPieceEl) { callback(); return; }
+
+    tPieceEl.classList.add("glow-white");
+
+    setTimeout(function() {
+      tPieceEl.classList.remove("glow-white");
+      tPieceEl.classList.add("flip-piece");
+
+      setTimeout(function() {
+        tPieceEl.classList.remove("p1", "p2");
+        tPieceEl.classList.add("p" + state.current);
+        state.board[r][c] = state.current;
+      }, 250);
+
+      setTimeout(callback, 500);
+    }, 400);
+  }
+
+  function executeSkillSequence() {
+    state.locked = true;
+    
+    // Safeguard: Check for pre-existing wins before skill is cast
+    var preWin1 = winningCells(state.board, P1);
+    var preWin2 = winningCells(state.board, P2);
+    if (preWin1 || preWin2) {
+      state.current = preWin1 ? P1 : P2;
+      endMatchWithWin(preWin1 || preWin2);
+      return;
+    }
+    
+    var rand = Math.random() * 100;
+    var skillType = "";
+    var name = "";
+    var desc = "";
+
+    if (rand < 25) {
+      skillType = "mirage";
+      name = "Monochrome Mirage";
+      desc = "⚡ Mirage! All pieces look " + (state.current === P1 ? "Red" : "Yellow") + " until opponent moves.";
+    } else if (rand < 70) {
+      skillType = "vanishing";
+      name = "Vanishing Act";
+      desc = "⚡ Vanishing Act! A random piece disappears – watch the board shift!";
+    } else if (rand < 95) {
+      skillType = "blockade";
+      name = "Blockade";
+      desc = "⚡ Blockade! A random column is locked for your opponent.";
+    } else {
+      skillType = "infiltrator";
+      name = "Infiltrator";
+      desc = "⚡ Infiltrator! An enemy piece has been turned to your side!";
+    }
+
+    el.skillTitle.textContent = name;
+    el.skillDesc.textContent = desc;
+    el.skillBanner.classList.add("show");
+
+    // Flash board border container setup
+    var accentColor = state.current === P1 ? "var(--red-2)" : "var(--amber-2)";
+    el.boardFrame.style.boxShadow = "0 0 30px 8px " + accentColor;
+
+    setTimeout(function() {
+      el.boardFrame.style.boxShadow = "";
+      
+      applySkillEffect(skillType, function() {
+        el.skillBanner.classList.remove("show");
+        
+        var skillUser = state.current;
+        var opponent = skillUser === P1 ? P2 : P1;
+
+        // 1. Modify Win Detection After Skill Resolution
+        // a. FIRST, check if the skill user has at least one four-in-a-row line
+        var winUser = winningCells(state.board, skillUser);
+        if (winUser) {
+          // b. If YES -> Skill user wins immediately.
+          endMatchWithWin(winUser, skillType);
+          return;
+        }
+
+        // c. If NO -> Then check if the opponent has a four-in-a-row line.
+        var winOpponent = winningCells(state.board, opponent);
+        if (winOpponent) {
+          // Opponent wins (skill backfired)
+          state.current = opponent;
+          endMatchWithWin(winOpponent);
+          return;
+        }
+
+        if (isBoardFull(state.board)) {
+          endMatchWithDraw();
+          return;
+        }
+
+        // Advance sequence rotation directly over to targeted challenger
+        state.current = opponent;
+        updateScoreboard();
+        continueGameSequence();
+      });
+    }, 1600);
+  }
+
+  function applySkillEffect(type, callback) {
+    var opponent = state.current === P1 ? P2 : P1;
+    var isCPU = (state.mode === "pvc" && state.current === P2);
+
+    if (type === "mirage") {
+      state.activeMirage = state.current === P1 ? "red" : "yellow";
+      el.board.classList.add(state.current === P1 ? "illusion-red" : "illusion-yellow");
+      callback();
+    } 
+    else if (type === "blockade") {
+      var safeCols = [];
+      for (var c = 0; c < COLS; c++) { if (state.board[0][c] === EMPTY) safeCols.push(c); }
+      
+      if (safeCols.length === 0) {
+        updateStatus("No column available to block.");
+        callback();
+        return;
+      }
+
+      if (isCPU) {
+        // CPU Heuristic: Pick the column that minimizes the opponent's best score
+        var bestCol = safeCols[0];
+        var maxScore = -Infinity;
+        for (var i = 0; i < safeCols.length; i++) {
+          var col = safeCols[i];
+          var row = nextOpenRow(state.board, col);
+          var simBoard = cloneBoard(state.board);
+          dropPiece(simBoard, row, col, opponent);
+          var score = scorePosition(simBoard, opponent);
+          if (score > maxScore) { maxScore = score; bestCol = col; }
+        }
+        executeBlockade(bestCol, opponent, callback);
+      } else {
+        setupManualSelection("blockade", "⚡ Select a column to block for your opponent", callback);
+      }
+    } 
+    else if (type === "vanishing") {
+      var oppOccupied = [];
+      for (var r = 0; r < ROWS; r++) {
+        for (var c = 0; c < COLS; c++) {
+          if (state.board[r][c] === opponent) oppOccupied.push({r: r, c: c});
+        }
+      }
+
+      if (oppOccupied.length === 0) {
+        updateStatus("No opponent pieces to target");
+        callback();
+        return;
+      }
+
+      if (isCPU) {
+        // CPU Heuristic: Remove an opponent's piece that lowers their score the most
+        var bestCell = oppOccupied[0];
+        var minScore = Infinity;
+        for (var j = 0; j < oppOccupied.length; j++) {
+           var cell = oppOccupied[j];
+           var sBoard = cloneBoard(state.board);
+           sBoard[cell.r][cell.c] = EMPTY;
+           var sc = scorePosition(sBoard, opponent);
+           if (sc < minScore) { minScore = sc; bestCell = cell; }
+        }
+        // Fallback to random if no opponent pieces exist theoretically
+        if (minScore === Infinity) bestCell = oppOccupied[Math.floor(Math.random() * oppOccupied.length)];
+        executeVanishing(bestCell.r, bestCell.c, callback);
+      } else {
+        setupManualSelection("vanishing", "⚡ Select an OPPONENT'S piece to remove", callback);
+      }
+    } 
+    else if (type === "infiltrator") {
+      var candidates = [];
+      for (var r = 0; r < ROWS; r++) {
+        for (var c = 0; c < COLS; c++) {
+          if (state.board[r][c] === opponent) candidates.push({r: r, c: c});
+        }
+      }
+
+      if (candidates.length === 0) {
+        updateStatus("No opponent pieces to target");
+        callback();
+        return;
+      }
+
+      if (isCPU) {
+        // CPU Heuristic: Pick an opponent piece to convert that gives highest immediate score
+        var bestTCell = candidates[0];
+        var bScore = -Infinity;
+        for (var k = 0; k < candidates.length; k++) {
+           var tCell = candidates[k];
+           var simTBoard = cloneBoard(state.board);
+           simTBoard[tCell.r][tCell.c] = state.current;
+           var s = scorePosition(simTBoard, state.current);
+           if (s > bScore) { bScore = s; bestTCell = tCell; }
+        }
+        executeInfiltrator(bestTCell.r, bestTCell.c, callback);
+      } else {
+        setupManualSelection("infiltrator", "⚡ Select an OPPONENT'S piece to convert", callback);
+      }
+    }
+  }
+
+  function announceResult(kind, skillType){
+    if (kind === "win"){
+      var winnerIsP1 = state.current === P1;
+      var winnerName = state.mode === "pvp"
+        ? (winnerIsP1 ? "Player 1" : "Player 2")
+        : (winnerIsP1 ? "You" : "The Computer");
+
+      // Clean up "The Computer" to "Computer" for clean grammar in custom skill messages
+      var displayName = winnerName;
+      if (state.mode === "pvc" && winnerName === "The Computer") {
+         displayName = "Computer";
+      }
+      
+      var winText = displayName + " Win" + (displayName === "You" ? "" : "s") + "!";
+
+      if (skillType === "vanishing") {
+         el.resultMark.textContent = "🎯";
+         el.resultTitle.textContent = winText;
+         el.resultSub.textContent = "Vanishing Act cleared the way!";
+      } else if (skillType === "infiltrator") {
+         el.resultMark.textContent = "🪄";
+         el.resultTitle.textContent = winText;
+         el.resultSub.textContent = "Infiltrator turned the tide!";
+      } else {
+         el.resultMark.textContent = (state.mode === "pvc" && !winnerIsP1) ? "🤖" : "🏆";
+         el.resultTitle.textContent = winnerName + " Win" + (winnerName === "You" ? "" : "s") + "!";
+         el.resultSub.textContent = state.mode === "pvc"
+           ? (winnerIsP1 ? "Four in a row — well played." : "The house takes this one.")
+           : "Four in a row, fair and square.";
+      }
+    } else {
+      el.resultMark.textContent = "🤝";
+      el.resultTitle.textContent = "Draw";
+      el.resultSub.textContent = "Every slot filled, no line of four. A clean stalemate.";
+    }
+    el.resultBackdrop.classList.add("show");
+  }
+
+  /* ============================================================
+     AMBIENT MENU DECORATION
+  ============================================================ */
+  function buildAmbient(){
+    var AROWS = 6, ACOLS = 7;
+    for (var i = 0; i < AROWS * ACOLS; i++){
+      var hole = document.createElement("div");
+      hole.className = "ambient-hole";
+      el.ambientGrid.appendChild(hole);
+    }
+    var seeds = [
+      {col:1,row:5,color:"red",delay:0},
+      {col:3,row:5,color:"amber",delay:.9},
+      {col:5,row:5,color:"red",delay:1.8},
+      {col:2,row:4,color:"amber",delay:2.7},
+      {col:4,row:4,color:"red",delay:3.6},
+      {col:3,row:3,color:"amber",delay:4.5}
+    ];
+    seeds.forEach(function(s){
+      var p = document.createElement("div");
+      p.className = "ambient-piece " + s.color;
+      var leftPct = (s.col / ACOLS) * 100 + (100 / ACOLS) / 2;
+      p.style.left = "calc(" + leftPct + "% - (96%/7)/2)";
+      p.style.setProperty("--land", ((s.row / AROWS) * 100) + "%");
+      p.style.animationDelay = s.delay + "s";
+      el.ambientGrid.parentElement.appendChild(p);
+    });
+  }
+
+  buildAmbient();
+})();
+</script>
+</body>
+</html>
