@@ -1,0 +1,1313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Sliding Sudoku</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #eef1f7;
+    --surface: #ffffff;
+    --surface-alt: #f4f6fb;
+    --ink: #1b1e2b;
+    --ink-soft: #565d72;
+    --accent: #2451c4;
+    --accent-soft: #dbe4fb;
+    --accent-hover: #1c3f9e;
+    --selected-ring: #e8952a;
+    --selected-bg: rgba(255, 180, 84, 0.42);
+    --correct-bg: rgba(82, 101, 140, 0.30);
+    --correct-ring: #52658c;
+    --line: #d9dce6;
+    --line-thick: #262b3a;
+    --danger: #c0392b;
+    --radius-lg: 20px;
+    --radius-md: 12px;
+    --font-display: 'Space Grotesk', 'Segoe UI', sans-serif;
+    --font-body: 'Inter', 'Segoe UI', sans-serif;
+    --font-mono: 'JetBrains Mono', 'Consolas', monospace;
+  }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+  }
+
+  body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-family: var(--font-body);
+    color: var(--ink);
+    padding: 28px 16px 56px;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .hidden { display: none !important; }
+
+  .screen {
+    width: 100%;
+    max-width: 640px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    animation: fadeIn 0.35s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  a { color: var(--accent); }
+
+  /* ===================== Start screen ===================== */
+
+  .pencil-wrap {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 4px;
+  }
+
+  #pencilCanvas {
+    display: block;
+    max-width: 100%;
+    height: auto;
+  }
+
+  .brand-eyebrow {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    letter-spacing: 0.18em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+    margin: 0 0 6px;
+  }
+
+  .title-float-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .title {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(26px, 8.5vw, 44px);
+    letter-spacing: -0.01em;
+    color: var(--ink);
+    margin: 0;
+    text-align: center;
+    white-space: nowrap;
+    animation: titleLevitate 3.4s ease-in-out infinite;
+    will-change: transform;
+  }
+  .title span { color: var(--accent); }
+
+  .title-shadow {
+    width: 120px;
+    max-width: 40vw;
+    height: 14px;
+    margin-top: 10px;
+    background: radial-gradient(ellipse at center, rgba(36, 81, 196, 0.28) 0%, rgba(36, 81, 196, 0) 72%);
+    border-radius: 50%;
+    animation: titleShadowPulse 3.4s ease-in-out infinite;
+  }
+
+  @keyframes titleLevitate {
+    0%, 100% { transform: translateY(0); }
+    50%      { transform: translateY(-12px); }
+  }
+
+  @keyframes titleShadowPulse {
+    0%, 100% { transform: scale(1);    opacity: 0.6;  }
+    50%      { transform: scale(0.7);  opacity: 0.28; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .title, .title-shadow { animation: none; }
+  }
+
+  .subtitle {
+    font-size: 16px;
+    color: var(--ink-soft);
+    max-width: 420px;
+    text-align: center;
+    margin: 12px 0 34px;
+    line-height: 1.5;
+  }
+
+  .diff-list {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 28px;
+  }
+
+  .diff-btn {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    width: 100%;
+    text-align: left;
+    font-family: inherit;
+    background: var(--surface);
+    border: 2px solid var(--accent-soft);
+    border-radius: var(--radius-lg);
+    padding: 16px 20px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, transform 0.1s ease, box-shadow 0.15s ease;
+  }
+  .diff-btn:hover {
+    border-color: var(--accent);
+    box-shadow: 0 8px 22px rgba(36, 81, 196, 0.12);
+  }
+  .diff-btn:active { transform: scale(0.985); }
+
+  .shape-icon {
+    flex-shrink: 0;
+    display: grid;
+    gap: 2px;
+    background: var(--line-thick);
+    border: 3px solid var(--line-thick);
+    border-radius: 5px;
+    padding: 0;
+  }
+  .shape-icon .dot { background: var(--accent-soft); }
+  .shape-icon.easy   { grid-template-columns: repeat(2, 12px); grid-template-rows: repeat(3, 12px); }
+  .shape-icon.medium { grid-template-columns: repeat(3, 12px); grid-template-rows: repeat(3, 12px); }
+  .shape-icon.hard   { grid-template-columns: repeat(6, 9px);  grid-template-rows: repeat(3, 9px); }
+
+  .diff-text { display: flex; flex-direction: column; gap: 2px; }
+  .diff-name {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 19px;
+    color: var(--ink);
+  }
+  .diff-meta {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    color: var(--ink-soft);
+  }
+
+  .how-to-play-link {
+    color: blue;
+    text-decoration: underline;
+    cursor: pointer;
+    font-size: 15px;
+    background: none;
+    border: none;
+    font-family: inherit;
+    padding: 0;
+  }
+
+  /* ===================== Game screen ===================== */
+
+  .game-header {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+
+  .back-btn {
+    font-family: var(--font-body);
+    font-weight: 600;
+    font-size: 14px;
+    background: var(--surface);
+    border: 2px solid var(--accent-soft);
+    color: var(--ink-soft);
+    border-radius: 999px;
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, background 0.15s ease;
+  }
+  .back-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .diff-label {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 17px;
+    color: var(--ink);
+    text-align: center;
+    flex: 1;
+  }
+
+  .game-header .how-to-play-link { font-size: 13px; white-space: nowrap; }
+
+  .game-stats-row {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(10px, 3vw, 26px);
+  }
+
+  .stat-panel {
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    min-width: 58px;
+  }
+  .stat-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--ink-soft);
+  }
+  .stat-value {
+    font-family: var(--font-mono);
+    font-weight: 700;
+    font-size: clamp(18px, 4.5vw, 26px);
+    color: var(--accent);
+    font-variant-numeric: tabular-nums;
+  }
+
+  #boardWrap {
+    position: relative;
+    padding: 8px;
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 12px 30px rgba(38, 43, 58, 0.12);
+  }
+
+  #board {
+    display: grid;
+    grid-template-columns: repeat(var(--n), 1fr);
+    grid-template-rows: repeat(var(--n), 1fr);
+    width: min(88vw, 480px);
+    height: min(88vw, 480px);
+    gap: 1px;
+    background: var(--line);
+    border: 3px solid var(--line-thick);
+    border-radius: 8px;
+    overflow: hidden;
+  }
+
+  .cell {
+    background: var(--surface);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: var(--font-mono);
+    font-weight: 700;
+    color: var(--ink);
+    user-select: none;
+    cursor: pointer;
+    font-size: calc(min(88vw, 480px) / var(--n) * 0.4);
+    transition: background-color 0.12s ease;
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
+  }
+  .cell.block-alt { background: var(--surface-alt); }
+  .cell.correct   { background: var(--correct-bg); }
+  .cell.selected  {
+    background: var(--selected-bg);
+    box-shadow: inset 0 0 0 2px var(--selected-ring);
+  }
+
+  .cell.border-r-thick { box-shadow: inset -3px 0 0 0 var(--line-thick); }
+  .cell.border-b-thick { box-shadow: inset 0 -3px 0 0 var(--line-thick); }
+  .cell.border-r-thick.border-b-thick { box-shadow: inset -3px 0 0 0 var(--line-thick), inset 0 -3px 0 0 var(--line-thick); }
+  .cell.border-r-thick.selected { box-shadow: inset -3px 0 0 0 var(--line-thick), inset 0 0 0 2px var(--selected-ring); }
+  .cell.border-b-thick.selected { box-shadow: inset 0 -3px 0 0 var(--line-thick), inset 0 0 0 2px var(--selected-ring); }
+  .cell.border-r-thick.border-b-thick.selected { box-shadow: inset -3px 0 0 0 var(--line-thick), inset 0 -3px 0 0 var(--line-thick), inset 0 0 0 2px var(--selected-ring); }
+
+  .cell.swap-pulse { animation: cellPulse 0.28s ease; z-index: 1; position: relative; }
+  @keyframes cellPulse {
+    0%   { transform: scale(1.22); }
+    55%  { transform: scale(0.92); }
+    100% { transform: scale(1); }
+  }
+
+  /* Win cascade animation */
+  .cell.win-pulse {
+    animation: winCellPulse 0.8s ease-in-out;
+    position: relative;
+    z-index: 10;
+  }
+  @keyframes winCellPulse {
+    0%   { transform: scale(1); background: var(--correct-bg); }
+    50%  { transform: scale(1.15); background: var(--selected-bg); box-shadow: 0 4px 12px rgba(232, 149, 42, 0.4); border-radius: 6px; }
+    100% { transform: scale(1); background: var(--correct-bg); }
+  }
+
+  #genOverlay {
+    position: absolute;
+    inset: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.88);
+    border-radius: 8px;
+    font-family: var(--font-mono);
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: 0.04em;
+    z-index: 5;
+  }
+
+  /* ===================== Modals ===================== */
+
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(27, 30, 43, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    z-index: 2000;
+  }
+
+  .modal-card {
+    position: relative;
+    background: var(--surface);
+    border-radius: var(--radius-lg);
+    padding: 30px 30px 26px;
+    max-width: 460px;
+    width: 100%;
+    max-height: 86vh;
+    overflow-y: auto;
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.28);
+  }
+
+  .modal-card h2 {
+    font-family: var(--font-display);
+    font-size: 24px;
+    margin: 0 0 14px;
+    color: var(--ink);
+  }
+
+  .modal-card h3 {
+    font-family: var(--font-display);
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--accent);
+    margin: 18px 0 6px;
+  }
+
+  .modal-card p, .modal-card li { font-size: 14.5px; line-height: 1.55; color: var(--ink-soft); }
+  .modal-card ul { margin: 0; padding-left: 20px; }
+
+  .swatch {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    margin-right: 6px;
+    vertical-align: -1px;
+  }
+  .swatch.orange { background: #ffb454; }
+  .swatch.navy { background: #52658c; }
+
+  .modal-close {
+    position: absolute;
+    top: 14px;
+    right: 16px;
+    background: none;
+    border: none;
+    font-size: 22px;
+    line-height: 1;
+    color: var(--ink-soft);
+    cursor: pointer;
+  }
+  .modal-close:hover { color: var(--ink); }
+
+  .win-card {
+    text-align: center;
+  }
+  .win-emoji { font-size: 40px; margin-bottom: 4px; }
+  .win-card h2 { text-align: center; }
+  .win-card p { text-align: center; font-size: 16px; color: var(--ink); margin: 6px 0 22px; }
+
+  .modal-btn {
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: 15px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 999px;
+    padding: 11px 26px;
+    cursor: pointer;
+    transition: background 0.15s ease, transform 0.1s ease;
+  }
+  .modal-btn:hover { background: var(--accent-hover); }
+  .modal-btn:active { transform: scale(0.97); }
+
+  /* Forfeit specific modal styles */
+  .forfeit-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 12px;
+    margin-top: 24px;
+  }
+
+  .modal-btn.danger-btn {
+    background: var(--danger);
+  }
+  .modal-btn.danger-btn:hover {
+    background: #a83225;
+  }
+
+  .modal-btn.alt-btn {
+    background: var(--surface);
+    color: var(--accent);
+    border: 2px solid var(--accent);
+    padding: 9px 24px; /* offset the 2px border */
+  }
+  .modal-btn.alt-btn:hover {
+    background: var(--accent-soft);
+  }
+
+  @media (max-width: 380px) {
+    .title { font-size: 34px; }
+    .diff-name { font-size: 17px; }
+    .stat-panel { min-width: 46px; }
+  }
+</style>
+</head>
+<body>
+
+  <!-- ===================== Start screen ===================== -->
+  <div id="screenStart" class="screen">
+    <div class="pencil-wrap">
+      <canvas id="pencilCanvas" width="240" height="200" aria-hidden="true"></canvas>
+    </div>
+    <p class="brand-eyebrow">a puzzle of adjacent moves</p>
+    <div class="title-float-wrap">
+      <h1 class="title">Sliding <span>Sudoku</span></h1>
+      <div class="title-shadow" aria-hidden="true"></div>
+    </div>
+    <p class="subtitle">Every digit is already on the board — out of place. Slide numbers between neighbouring cells until rows, columns, and blocks fall into order.</p>
+
+    <div class="diff-list">
+      <button class="diff-btn" data-diff="easy">
+        <span class="shape-icon easy" aria-hidden="true">
+          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        </span>
+        <span class="diff-text">
+          <span class="diff-name">Easy</span>
+          <span class="diff-meta">6×6 grid · digits 1–6 · 3×2 blocks</span>
+        </span>
+      </button>
+
+      <button class="diff-btn" data-diff="medium">
+        <span class="shape-icon medium" aria-hidden="true">
+          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        </span>
+        <span class="diff-text">
+          <span class="diff-name">Medium</span>
+          <span class="diff-meta">9×9 grid · digits 1–9 · 3×3 blocks</span>
+        </span>
+      </button>
+
+      <button class="diff-btn" data-diff="hard">
+        <span class="shape-icon hard" aria-hidden="true">
+          <span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+          <span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+          <span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="dot"></span>
+        </span>
+        <span class="diff-text">
+          <span class="diff-name">Hard</span>
+          <span class="diff-meta">18×18 grid · digits 1–18 · 3×6 blocks</span>
+        </span>
+      </button>
+    </div>
+
+    <a href="#" id="howToPlayLink" class="how-to-play-link">How to Play</a>
+  </div>
+
+  <!-- ===================== Game screen ===================== -->
+  <div id="screenGame" class="screen hidden">
+    <div class="game-header">
+      <button id="backBtn" class="back-btn">← Menu</button>
+      <div class="diff-label" id="diffLabel">Sliding Sudoku</div>
+      <a href="#" id="howToPlayLink2" class="how-to-play-link">How to Play</a>
+    </div>
+
+    <div class="game-stats-row">
+      <div class="stat-panel">
+        <span class="stat-label">Moves</span>
+        <span class="stat-value" id="moveCounter">0</span>
+      </div>
+
+      <div id="boardWrap">
+        <div id="board" role="grid" aria-label="Sudoku board"></div>
+        <div id="genOverlay" class="hidden">Shuffling puzzle…</div>
+      </div>
+
+      <div class="stat-panel">
+        <span class="stat-label">Time</span>
+        <span class="stat-value" id="timerDisplay">00:00</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===================== How to Play modal ===================== -->
+  <div id="howToPlayOverlay" class="modal-overlay hidden">
+    <div class="modal-card">
+      <button class="modal-close" id="closeHowTo" aria-label="Close">&times;</button>
+      <h2>How to Play</h2>
+
+      <h3>Goal</h3>
+      <p>The board starts completely filled with the wrong digits in the wrong places. Slide numbers between adjacent cells until every row, column, and block contains each digit exactly once.</p>
+
+      <h3>Controls</h3>
+      <p>Click or tap a cell to select it. Then use the <strong>arrow keys</strong> or <strong>WASD</strong> to swap its digit with the neighbouring cell in that direction. Only up, down, left, and right moves are allowed — no diagonals.</p>
+
+      <h3>Highlights</h3>
+      <ul>
+        <li><span class="swatch orange"></span>The selected cell glows <strong>light orange</strong>.</li>
+        <li><span class="swatch navy"></span>Cells already matching the solved board glow <strong>light navy blue</strong>.</li>
+      </ul>
+
+      <h3>Info panels</h3>
+      <p>The move counter sits to the left of the board and the timer to the right. Both start the moment you make your first swap.</p>
+
+      <h3>Winning</h3>
+      <p>Once every cell lands in its correct position, the puzzle is solved and your final time and move count are shown.</p>
+    </div>
+  </div>
+
+  <!-- ===================== Win modal ===================== -->
+  <div id="winOverlay" class="modal-overlay hidden">
+    <div class="modal-card win-card">
+      <div class="win-emoji">🎉</div>
+      <h2>Solved!</h2>
+      <p id="winStats"></p>
+      <button id="playAgainBtn" class="modal-btn">New Game</button>
+    </div>
+  </div>
+
+  <!-- ===================== Forfeit modal ===================== -->
+  <div id="forfeitOverlay" class="modal-overlay hidden">
+    <div class="modal-card">
+      <h2>Are you sure you want to quit?</h2>
+      <div class="forfeit-actions">
+        <button id="resumeBtn" class="modal-btn alt-btn">Resume</button>
+        <button id="quitBtn" class="modal-btn danger-btn">Quit</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function () {
+  'use strict';
+
+  /* =====================================================================
+     Difficulty configuration
+  ===================================================================== */
+  const DIFFICULTIES = {
+    easy:   { label: 'Easy',   N: 6,  blockRows: 3, blockCols: 2 },
+    medium: { label: 'Medium', N: 9,  blockRows: 3, blockCols: 3 },
+    hard:   { label: 'Hard',   N: 18, blockRows: 3, blockCols: 6 },
+  };
+
+  /* =====================================================================
+     Game state
+  ===================================================================== */
+  const state = {
+    N: 0, blockRows: 0, blockCols: 0, blockCountCols: 0,
+    solution: null,
+    grid: null,
+    cellEls: null,
+    selectedRow: null,
+    selectedCol: null,
+    moveCount: 0,
+    timerSeconds: 0,
+    timerHandle: null,
+    started: false,
+    solved: false,
+  };
+
+  /* =====================================================================
+     DOM references
+  ===================================================================== */
+  const screenStart = document.getElementById('screenStart');
+  const screenGame = document.getElementById('screenGame');
+  const boardEl = document.getElementById('board');
+  const boardWrapEl = document.getElementById('boardWrap');
+  const genOverlayEl = document.getElementById('genOverlay');
+  const moveCounterEl = document.getElementById('moveCounter');
+  const timerDisplayEl = document.getElementById('timerDisplay');
+  const diffLabelEl = document.getElementById('diffLabel');
+  const howToPlayOverlay = document.getElementById('howToPlayOverlay');
+  const winOverlay = document.getElementById('winOverlay');
+  const forfeitOverlay = document.getElementById('forfeitOverlay');
+  const winStatsEl = document.getElementById('winStats');
+
+  /* =====================================================================
+     Sound effects — lazily-created Web Audio synth (no external assets).
+     Only two effects: a soft tick on tile swap, and a short fanfare
+     when the puzzle is fully solved.
+  ===================================================================== */
+  let audioCtx = null;
+
+  function getAudioCtx() {
+    if (!audioCtx) {
+      audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    return audioCtx;
+  }
+
+  function playSound(type) {
+    const ctx = getAudioCtx();
+    const t0 = ctx.currentTime;
+
+    if (type === 'swap') {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(520, t0);
+      osc.frequency.exponentialRampToValueAtTime(700, t0 + 0.06);
+      gain.gain.setValueAtTime(0.08, t0);
+      gain.gain.exponentialRampToValueAtTime(0.001, t0 + 0.09);
+      osc.start(t0);
+      osc.stop(t0 + 0.09);
+
+    } else if (type === 'solve') {
+      const notes = [523.25, 659.25, 783.99, 1046.5]; // C5 E5 G5 C6
+      notes.forEach((freq, i) => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'triangle';
+        const start = t0 + i * 0.12;
+        osc.frequency.setValueAtTime(freq, start);
+        gain.gain.setValueAtTime(0.0001, start);
+        gain.gain.exponentialRampToValueAtTime(0.14, start + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.0001, start + 0.5);
+        osc.start(start);
+        osc.stop(start + 0.5);
+      });
+      // final held chord for a satisfying resolve
+      const chordStart = t0 + notes.length * 0.12;
+      [523.25, 659.25, 783.99].forEach(freq => {
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(freq, chordStart);
+        gain.gain.setValueAtTime(0.0001, chordStart);
+        gain.gain.exponentialRampToValueAtTime(0.1, chordStart + 0.03);
+        gain.gain.exponentialRampToValueAtTime(0.0001, chordStart + 0.9);
+        osc.start(chordStart);
+        osc.stop(chordStart + 0.9);
+      });
+    }
+  }
+
+  /* =====================================================================
+     Solution generator — randomized backtracking with MRV heuristic and
+     bitmask row/col/block tracking (N <= 18, so a 32-bit mask is safe).
+  ===================================================================== */
+  function generateSolution(N, blockRows, blockCols) {
+    const blockCountCols = N / blockCols;
+    const grid = Array.from({ length: N }, () => Array(N).fill(0));
+    const rowMask = new Array(N).fill(0);
+    const colMask = new Array(N).fill(0);
+    const blockMask = new Array(N).fill(0);
+    const FULL = (1 << N) - 1;
+
+    function blockIndex(r, c) {
+      return Math.floor(r / blockRows) * blockCountCols + Math.floor(c / blockCols);
+    }
+
+    function countBits(x) {
+      let n = 0;
+      while (x) { x &= x - 1; n++; }
+      return n;
+    }
+
+    function shuffledDigits() {
+      const arr = [];
+      for (let d = 1; d <= N; d++) arr.push(d);
+      for (let i = arr.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [arr[i], arr[j]] = [arr[j], arr[i]];
+      }
+      return arr;
+    }
+
+    function findMRVCell(remaining) {
+      let best = -1, bestCount = Infinity, bestMask = 0;
+      for (let i = 0; i < remaining.length; i++) {
+        const r = remaining[i][0], c = remaining[i][1];
+        const used = rowMask[r] | colMask[c] | blockMask[blockIndex(r, c)];
+        const avail = FULL & ~used;
+        const cnt = countBits(avail);
+        if (cnt < bestCount) {
+          bestCount = cnt;
+          best = i;
+          bestMask = avail;
+          if (cnt <= 1) break;
+        }
+      }
+      return { idx: best, count: bestCount, mask: bestMask };
+    }
+
+    function backtrack(remaining) {
+      if (remaining.length === 0) return true;
+      const { idx, count, mask } = findMRVCell(remaining);
+      if (count === 0) return false;
+
+      const r = remaining[idx][0], c = remaining[idx][1];
+      const nextRemaining = remaining.slice(0, idx).concat(remaining.slice(idx + 1));
+      const bIdx = blockIndex(r, c);
+
+      const digits = shuffledDigits();
+      for (const d of digits) {
+        const bit = 1 << (d - 1);
+        if (!(mask & bit)) continue;
+
+        grid[r][c] = d;
+        rowMask[r] |= bit;
+        colMask[c] |= bit;
+        blockMask[bIdx] |= bit;
+
+        if (backtrack(nextRemaining)) return true;
+
+        grid[r][c] = 0;
+        rowMask[r] &= ~bit;
+        colMask[c] &= ~bit;
+        blockMask[bIdx] &= ~bit;
+      }
+      return false;
+    }
+
+    const cells = [];
+    for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) cells.push([r, c]);
+    backtrack(cells);
+    return grid;
+  }
+
+  /* =====================================================================
+     Shuffle — randomized valid adjacent swaps only, so the starting board
+     is always a reachable permutation of the solution.
+  ===================================================================== */
+  function cloneGrid(g) { return g.map(row => row.slice()); }
+
+  function gridsEqual(a, b, N) {
+    for (let r = 0; r < N; r++) {
+      for (let c = 0; c < N; c++) {
+        if (a[r][c] !== b[r][c]) return false;
+      }
+    }
+    return true;
+  }
+
+  function validNeighbors(r, c, N) {
+    const out = [];
+    if (r > 0) out.push([r - 1, c]);
+    if (r < N - 1) out.push([r + 1, c]);
+    if (c > 0) out.push([r, c - 1]);
+    if (c < N - 1) out.push([r, c + 1]);
+    return out;
+  }
+
+  function shuffleInPlace(grid, N, swaps) {
+    for (let i = 0; i < swaps; i++) {
+      const r = Math.floor(Math.random() * N);
+      const c = Math.floor(Math.random() * N);
+      const neighbors = validNeighbors(r, c, N);
+      const pick = neighbors[Math.floor(Math.random() * neighbors.length)];
+      const nr = pick[0], nc = pick[1];
+      const tmp = grid[r][c];
+      grid[r][c] = grid[nr][nc];
+      grid[nr][nc] = tmp;
+    }
+  }
+
+  function shuffleBoard(solution, N) {
+    const grid = cloneGrid(solution);
+    const swaps = 100 * N * N;
+    shuffleInPlace(grid, N, swaps);
+    let guard = 0;
+    while (gridsEqual(grid, solution, N) && guard < 25) {
+      shuffleInPlace(grid, N, swaps);
+      guard++;
+    }
+    return grid;
+  }
+
+  /* =====================================================================
+     Board rendering
+  ===================================================================== */
+  function buildBoardDOM() {
+    boardEl.innerHTML = '';
+    boardEl.style.setProperty('--n', state.N);
+    state.cellEls = [];
+
+    for (let r = 0; r < state.N; r++) {
+      const rowEls = [];
+      for (let c = 0; c < state.N; c++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.dataset.r = r;
+        cell.dataset.c = c;
+
+        const blockR = Math.floor(r / state.blockRows);
+        const blockC = Math.floor(c / state.blockCols);
+        if ((blockR + blockC) % 2 === 1) cell.classList.add('block-alt');
+        if ((c + 1) % state.blockCols === 0 && c !== state.N - 1) cell.classList.add('border-r-thick');
+        if ((r + 1) % state.blockRows === 0 && r !== state.N - 1) cell.classList.add('border-b-thick');
+
+        cell.addEventListener('click', onCellClick);
+        boardEl.appendChild(cell);
+        rowEls.push(cell);
+      }
+      state.cellEls.push(rowEls);
+    }
+  }
+
+  function updateCellDisplay(r, c) {
+    const el = state.cellEls[r][c];
+    el.textContent = state.grid[r][c];
+    el.classList.toggle('correct', state.grid[r][c] === state.solution[r][c]);
+  }
+
+  function renderFullBoard() {
+    for (let r = 0; r < state.N; r++) {
+      for (let c = 0; c < state.N; c++) updateCellDisplay(r, c);
+    }
+  }
+
+  /* =====================================================================
+     Selection & interaction
+  ===================================================================== */
+  function onCellClick(e) {
+    if (state.solved) return;
+    if (!forfeitOverlay.classList.contains('hidden')) return;
+    selectCell(parseInt(e.currentTarget.dataset.r, 10), parseInt(e.currentTarget.dataset.c, 10));
+  }
+
+  function selectCell(r, c) {
+    if (state.selectedRow !== null) {
+      state.cellEls[state.selectedRow][state.selectedCol].classList.remove('selected');
+    }
+    state.selectedRow = r;
+    state.selectedCol = c;
+    state.cellEls[r][c].classList.add('selected');
+  }
+
+  const KEY_DIRS = {
+    ArrowUp: [-1, 0], w: [-1, 0], W: [-1, 0],
+    ArrowDown: [1, 0], s: [1, 0], S: [1, 0],
+    ArrowLeft: [0, -1], a: [0, -1], A: [0, -1],
+    ArrowRight: [0, 1], d: [0, 1], D: [0, 1],
+  };
+
+  function onKeyDown(e) {
+    if (screenGame.classList.contains('hidden')) return;
+    if (!howToPlayOverlay.classList.contains('hidden') || !winOverlay.classList.contains('hidden') || !forfeitOverlay.classList.contains('hidden')) return;
+    if (state.solved) return;
+    if (state.selectedRow === null) return;
+    const dir = KEY_DIRS[e.key];
+    if (!dir) return;
+    e.preventDefault();
+    trySwap(dir[0], dir[1]);
+  }
+
+  function trySwap(dr, dc) {
+    const r = state.selectedRow, c = state.selectedCol;
+    const nr = r + dr, nc = c + dc;
+    if (nr < 0 || nr >= state.N || nc < 0 || nc >= state.N) return;
+
+    const tmp = state.grid[r][c];
+    state.grid[r][c] = state.grid[nr][nc];
+    state.grid[nr][nc] = tmp;
+
+    playSound('swap');
+
+    state.moveCount++;
+    moveCounterEl.textContent = state.moveCount;
+
+    if (!state.started) {
+      state.started = true;
+      startTimer();
+    }
+
+    updateCellDisplay(r, c);
+    updateCellDisplay(nr, nc);
+    pulseCell(r, c);
+    pulseCell(nr, nc);
+
+    selectCell(nr, nc);
+    checkWin();
+  }
+
+  function pulseCell(r, c) {
+    const el = state.cellEls[r][c];
+    el.classList.remove('swap-pulse');
+    void el.offsetWidth; // restart animation
+    el.classList.add('swap-pulse');
+  }
+
+  function checkWin() {
+    for (let r = 0; r < state.N; r++) {
+      for (let c = 0; c < state.N; c++) {
+        if (state.grid[r][c] !== state.solution[r][c]) return;
+      }
+    }
+    
+    state.solved = true;
+    stopTimer();
+    playSound('solve');
+
+    // Remove selection highlight
+    if (state.selectedRow !== null) {
+      state.cellEls[state.selectedRow][state.selectedCol].classList.remove('selected');
+    }
+
+    // Trigger cascade animation across the board
+    for (let r = 0; r < state.N; r++) {
+      for (let c = 0; c < state.N; c++) {
+        const delay = (r + c) * 60; // Create a diagonal wave effect
+        setTimeout(() => {
+          if (state.cellEls && state.cellEls[r] && state.cellEls[r][c]) {
+            state.cellEls[r][c].classList.add('win-pulse');
+          }
+        }, delay);
+      }
+    }
+
+    // Show the win modal after exactly 3 seconds
+    setTimeout(() => {
+      showWinModal();
+    }, 3000);
+  }
+
+  /* =====================================================================
+     Timer
+  ===================================================================== */
+  function startTimer() {
+    stopTimer();
+    state.timerHandle = setInterval(() => {
+      state.timerSeconds++;
+      timerDisplayEl.textContent = formatTime(state.timerSeconds);
+    }, 1000);
+  }
+
+  function stopTimer() {
+    if (state.timerHandle) {
+      clearInterval(state.timerHandle);
+      state.timerHandle = null;
+    }
+  }
+
+  function formatTime(total) {
+    const m = Math.floor(total / 60), s = total % 60;
+    return String(m).padStart(2, '0') + ':' + String(s).padStart(2, '0');
+  }
+
+  /* =====================================================================
+     Game lifecycle
+  ===================================================================== */
+  function startNewGame(diffKey) {
+    const cfg = DIFFICULTIES[diffKey];
+
+    stopTimer();
+    state.N = cfg.N;
+    state.blockRows = cfg.blockRows;
+    state.blockCols = cfg.blockCols;
+    state.blockCountCols = cfg.N / cfg.blockCols;
+    state.moveCount = 0;
+    state.timerSeconds = 0;
+    state.started = false;
+    state.solved = false;
+    state.selectedRow = null;
+    state.selectedCol = null;
+
+    moveCounterEl.textContent = '0';
+    timerDisplayEl.textContent = '00:00';
+    diffLabelEl.textContent = 'Sliding Sudoku – ' + cfg.label;
+
+    switchScreen('screenGame');
+    genOverlayEl.classList.remove('hidden');
+
+    setTimeout(() => {
+      state.solution = generateSolution(cfg.N, cfg.blockRows, cfg.blockCols);
+      state.grid = shuffleBoard(state.solution, cfg.N);
+      buildBoardDOM();
+      renderFullBoard();
+      selectCell(Math.floor(cfg.N / 2), Math.floor(cfg.N / 2));
+      genOverlayEl.classList.add('hidden');
+    }, 30);
+  }
+
+  function switchScreen(id) {
+    [screenStart, screenGame].forEach(s => s.classList.add('hidden'));
+    document.getElementById(id).classList.remove('hidden');
+  }
+
+  function showWinModal() {
+    winStatsEl.textContent = 'Moves: ' + state.moveCount + '   •   Time: ' + formatTime(state.timerSeconds);
+    winOverlay.classList.remove('hidden');
+  }
+
+  function hideWinModal() {
+    winOverlay.classList.add('hidden');
+  }
+
+  function openHowTo(e) {
+    if (e) e.preventDefault();
+    howToPlayOverlay.classList.remove('hidden');
+  }
+
+  function closeHowTo() {
+    howToPlayOverlay.classList.add('hidden');
+  }
+
+  /* =====================================================================
+     Event wiring
+  ===================================================================== */
+  document.querySelectorAll('.diff-btn').forEach(btn => {
+    btn.addEventListener('click', () => startNewGame(btn.dataset.diff));
+  });
+
+  document.getElementById('howToPlayLink').addEventListener('click', openHowTo);
+  document.getElementById('howToPlayLink2').addEventListener('click', openHowTo);
+  document.getElementById('closeHowTo').addEventListener('click', closeHowTo);
+  howToPlayOverlay.addEventListener('click', (e) => { if (e.target === howToPlayOverlay) closeHowTo(); });
+
+  // Forfeit trigger logic
+  document.getElementById('backBtn').addEventListener('click', () => {
+    if (state.solved) return;
+    forfeitOverlay.classList.remove('hidden');
+  });
+
+  // Modal response actions
+  document.getElementById('resumeBtn').addEventListener('click', () => {
+    forfeitOverlay.classList.add('hidden');
+  });
+
+  document.getElementById('quitBtn').addEventListener('click', () => {
+    forfeitOverlay.classList.add('hidden');
+    stopTimer();
+    switchScreen('screenStart');
+  });
+
+  document.getElementById('playAgainBtn').addEventListener('click', () => {
+    hideWinModal();
+    switchScreen('screenStart');
+  });
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      if (!howToPlayOverlay.classList.contains('hidden')) { closeHowTo(); return; }
+      if (!winOverlay.classList.contains('hidden')) { hideWinModal(); return; }
+      if (!forfeitOverlay.classList.contains('hidden')) { forfeitOverlay.classList.add('hidden'); return; }
+    }
+    onKeyDown(e);
+  });
+
+  /* =====================================================================
+     Decorative pencil animation (start screen only)
+  ===================================================================== */
+  (function initPencilAnimation() {
+    const canvas = document.getElementById('pencilCanvas');
+    if (!canvas || !canvas.getContext) return;
+    const ctx = canvas.getContext('2d');
+    const W = canvas.width, H = canvas.height;
+
+    const GRID_N = 6;
+    const GRID_SIZE = 126;
+    const CS = GRID_SIZE / GRID_N;
+    const GRID_OFFSET_X = (W - GRID_SIZE) / 2;
+    const GRID_OFFSET_Y = H - GRID_SIZE - 16;
+
+    const staticDigits = [
+      { r: 0, c: 1, v: 4 }, { r: 1, c: 4, v: 2 }, { r: 2, c: 0, v: 6 },
+      { r: 3, c: 5, v: 1 }, { r: 4, c: 2, v: 5 }, { r: 5, c: 4, v: 3 },
+    ];
+
+    const waypoints = [
+      { r: 0, c: 4 }, { r: 2, c: 2 }, { r: 4, c: 5 }, { r: 5, c: 1 }, { r: 1, c: 0 }, { r: 3, c: 3 },
+    ];
+    const writing = {};
+
+    function keyOf(r, c) { return r + ',' + c; }
+
+    function cellCenter(r, c) {
+      return {
+        x: GRID_OFFSET_X + c * CS + CS / 2,
+        y: GRID_OFFSET_Y + r * CS + CS / 2,
+      };
+    }
+
+    function easeInOutQuad(t) { return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t; }
+
+    function drawGrid() {
+      ctx.save();
+      ctx.fillStyle = 'rgba(36, 81, 196, 0.05)';
+      ctx.fillRect(GRID_OFFSET_X + 3, GRID_OFFSET_Y + 3, GRID_SIZE, GRID_SIZE);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(GRID_OFFSET_X, GRID_OFFSET_Y, GRID_SIZE, GRID_SIZE);
+
+      for (let i = 0; i <= GRID_N; i++) {
+        const thick = i % 3 === 0;
+        ctx.beginPath();
+        ctx.lineWidth = thick ? 2 : 1;
+        ctx.strokeStyle = thick ? '#262b3a' : '#d9dce6';
+        ctx.moveTo(GRID_OFFSET_X + i * CS, GRID_OFFSET_Y);
+        ctx.lineTo(GRID_OFFSET_X + i * CS, GRID_OFFSET_Y + GRID_SIZE);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(GRID_OFFSET_X, GRID_OFFSET_Y + i * CS);
+        ctx.lineTo(GRID_OFFSET_X + GRID_SIZE, GRID_OFFSET_Y + i * CS);
+        ctx.stroke();
+      }
+
+      ctx.font = '600 13px "JetBrains Mono", monospace';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+
+      ctx.fillStyle = '#9aa1b5';
+      staticDigits.forEach(d => {
+        const p = cellCenter(d.r, d.c);
+        ctx.fillText(String(d.v), p.x, p.y + 1);
+      });
+
+      Object.keys(writing).forEach(k => {
+        const d = writing[k];
+        const parts = k.split(',');
+        const p = cellCenter(Number(parts[0]), Number(parts[1]));
+        ctx.fillStyle = 'rgba(36, 81, 196,' + d.opacity.toFixed(2) + ')';
+        ctx.fillText(String(d.v), p.x, p.y + 1);
+      });
+
+      ctx.restore();
+    }
+
+    function drawPencil(x, y, angle, lift) {
+      const len = 52;
+      ctx.save();
+      ctx.translate(x, y + lift);
+      ctx.rotate(angle);
+
+      ctx.strokeStyle = '#333333';
+      ctx.lineWidth = 1.3;
+
+      ctx.fillStyle = '#ffcf6e';
+      ctx.beginPath();
+      ctx.moveTo(-6, -len + 12);
+      ctx.lineTo(6, -len + 12);
+      ctx.lineTo(6, -6);
+      ctx.lineTo(0, 4);
+      ctx.lineTo(-6, -6);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      ctx.fillStyle = '#3a3a3a';
+      ctx.beginPath();
+      ctx.moveTo(-2.3, -6);
+      ctx.lineTo(2.3, -6);
+      ctx.lineTo(0, 5.5);
+      ctx.closePath();
+      ctx.fill();
+
+      ctx.fillStyle = '#ff8fab';
+      ctx.fillRect(-6, -len, 12, 7);
+      ctx.fillStyle = '#cfcfcf';
+      ctx.fillRect(-6, -len + 6, 12, 3.5);
+
+      ctx.restore();
+    }
+
+    let wpIndex = 0;
+    let phase = 'moving';
+    let phaseStart = null;
+    const MOVE_MS = 850;
+    const WRITE_MS = 550;
+    const PAUSE_MS = 550;
+
+    function frame(now) {
+      if (phaseStart === null) phaseStart = now;
+      ctx.clearRect(0, 0, W, H);
+      drawGrid();
+
+      const elapsed = now - phaseStart;
+      const cur = waypoints[wpIndex];
+      const nextIdx = (wpIndex + 1) % waypoints.length;
+      const next = waypoints[nextIdx];
+      const curP = cellCenter(cur.r, cur.c);
+      const nextP = cellCenter(next.r, next.c);
+      const bob = Math.sin(now / 260) * 2;
+
+      let tipX, tipY, angle, lift;
+
+      if (phase === 'moving') {
+        const t = Math.min(1, elapsed / MOVE_MS);
+        const e = easeInOutQuad(t);
+        tipX = curP.x + (nextP.x - curP.x) * e;
+        tipY = curP.y + (nextP.y - curP.y) * e;
+        const dx = nextP.x - curP.x, dy = nextP.y - curP.y;
+        angle = Math.atan2(dy, dx) + Math.PI / 2.6;
+        lift = -14 - Math.sin(t * Math.PI) * 6;
+        if (t >= 1) { phase = 'writing'; phaseStart = now; }
+      } else if (phase === 'writing') {
+        const t = Math.min(1, elapsed / WRITE_MS);
+        tipX = nextP.x;
+        tipY = nextP.y;
+        angle = -0.32 + Math.sin(now / 90) * 0.08;
+        lift = -6 + bob * 0.6;
+        const k = keyOf(next.r, next.c);
+        if (!writing[k]) writing[k] = { v: 1 + Math.floor(Math.random() * GRID_N), opacity: 0 };
+        writing[k].opacity = Math.min(1, t * 1.3);
+        if (t >= 1) { phase = 'pausing'; phaseStart = now; }
+      } else {
+        const t = Math.min(1, elapsed / PAUSE_MS);
+        tipX = nextP.x;
+        tipY = nextP.y;
+        angle = -0.32;
+        lift = -14 + bob * 0.4;
+        if (t >= 1) {
+          const k = keyOf(next.r, next.c);
+          const finalVal = writing[k] ? writing[k].v : (1 + Math.floor(Math.random() * GRID_N));
+          delete writing[k];
+          const idx = staticDigits.findIndex(d => d.r === next.r && d.c === next.c);
+          if (idx >= 0) staticDigits[idx].v = finalVal; else staticDigits.push({ r: next.r, c: next.c, v: finalVal });
+          wpIndex = nextIdx;
+          phase = 'moving';
+          phaseStart = now;
+        }
+      }
+
+      drawPencil(tipX, tipY, angle, lift);
+      requestAnimationFrame(frame);
+    }
+
+    requestAnimationFrame(frame);
+  })();
+
+})();
+</script>
+</body>
+</html>
