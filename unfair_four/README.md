@@ -35,24 +35,3 @@ The computer uses different strategies depending on difficulty. **Easy** chooses
 #### Board Evaluation
 
 The AI evaluates the board by considering the center column and potential groups of four. It rewards its own two-, three-, and four-disc patterns while heavily penalizing situations where the opponent has an immediate three-in-a-row opportunity.
-
-### 4. Key Methods and Functions
-
-| Function | Purpose |
-| --- | --- |
-| `newBoard()` | Creates an empty 6×7 game board. |
-| `nextOpenRow()` | Finds the lowest available position in a column. |
-| `winningCells()` | Detects horizontal, vertical, and diagonal four-in-a-row combinations. |
-| `isTerminal()` | Determines whether the game has reached a win or full-board state. |
-| `evaluateWindow()` | Scores a group of four positions for the AI. |
-| `scorePosition()` | Evaluates the overall strategic value of a board. |
-| `minimax()` | Searches possible future moves for the computer using alpha-beta pruning. |
-| `pickAiMove()` | Selects the AI's move according to the chosen difficulty. |
-| `attemptMove()` | Places a disc and handles win, draw, skill, and turn progression. |
-| `executeSkillSequence()` | Selects and activates the match's random special skill. |
-| `applySkillEffect()` | Applies Mirage, Blockade, Vanishing Act, or Infiltrator effects. |
-| `endMatchWithWin()` | Records a win and displays the result. |
-
-## Conclusion
-
-**Unfair Four** takes a familiar Connect Four structure and adds **AI strategy, random disruption, and tactical skill effects**. The game is particularly valuable as a programming example because it demonstrates **two-player game state management, board algorithms, win detection, heuristic evaluation, Minimax search, alpha-beta pruning, DOM interaction, and animation effects**.
