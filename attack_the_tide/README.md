@@ -1,4 +1,4 @@
-# Attack The Tide — Game Introduction Report
+# Attack The Tide — Game Introduction
 
 ## 1. What Is the Game?
 
