@@ -1,5 +1,7 @@
 # Head Math
 
+![My Image](head_math.png)
+
 #### 1. What Is the Game?
 
 **Head Math Pro** is a fast-paced browser-based mental arithmetic game designed to train calculation speed and accuracy. Players solve randomly generated **addition or subtraction problems** and try to achieve the highest possible score without making a mistake. The game combines mathematics with a timer, power-ups, visual effects, and a rank system to make repeated practice more engaging.
