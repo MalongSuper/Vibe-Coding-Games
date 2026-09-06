@@ -1,4 +1,4 @@
-# Attack The Tide — Overview
+# Attack The Tide
 
 ## 1. What Is the Game?
 
