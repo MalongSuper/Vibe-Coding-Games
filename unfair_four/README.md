@@ -1,7 +1,5 @@
 # Unfair Four
 
-![My Image](unfair_four.png)
-
 ### 1. What Is the Game?
 
 **Unfair Four** is a strategic **Connect Four-style game** played on a 7×6 board. Players take turns dropping discs into columns and try to connect four discs horizontally, vertically, or diagonally. Its main twist is a **one-time random skill event** that activates when the board reaches roughly 21–25 pieces, disrupting the normal rules and creating unexpected opportunities.
