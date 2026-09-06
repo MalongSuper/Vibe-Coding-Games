@@ -1,4 +1,4 @@
-# Derby Runners: Falling Roads — Overview
+# Derby Runners: Falling Roads
 
 ## 1. What is the Game?
 
