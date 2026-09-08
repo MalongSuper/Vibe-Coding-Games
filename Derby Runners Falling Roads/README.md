@@ -46,8 +46,8 @@ Character motion is governed by a delta-time (`dt`) physics simulation:
 
 ### Checkpoints & Respawn System
 - Tracks are divided into **4 equal segments** by **3 intermediate checkpoints** placed at 25%, 50%, and 75% of total race length.
-- When a runner collides with an obstacle without a active shield:
-  1. The runner enters a `hit` state for 1.4 seconds with upward trajectory velocity ($	ext{vy} = -280$).
+- When a runner collides with an obstacle without an active shield:
+  1. The runner enters a `hit` state for 1.4 seconds with upward trajectory velocity ($ext{vy} = -280$).
   2. A visual particle explosion occurs in the character's accent color.
   3. The runner auto-respawns at `lastCheckpointX` with zero horizontal velocity ($	ext{vx} = 0$), resetting negative status ailments.
 
