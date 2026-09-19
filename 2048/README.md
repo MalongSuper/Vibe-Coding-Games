@@ -15,3 +15,5 @@ The game maintains a **4×4 grid** containing tile objects. Each tile stores its
 The central mechanic is the **movement and merging system**. For each move, the program processes every row or column in the selected direction, removes empty spaces, moves tiles toward the chosen edge, and merges compatible neighboring tiles. A tile can only participate in one merge during a single move.
 
 Two different rule sets are implemented through the `MODES` object. Classic mode allows equal tiles to merge, while Fibonacci mode allows neighboring Fibonacci numbers to merge, such as `1 + 2 = 3`, `2 + 3 = 5`, and `3 + 5 = 8`.
+
+Reference Code: https://www.geeksforgeeks.org/javascript/design-a-2048-game-in-javascript/
