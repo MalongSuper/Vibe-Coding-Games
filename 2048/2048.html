@@ -1,0 +1,1222 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>2048</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com/" />
+    <link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Ubuntu:wght@500;700&display=swap" rel="stylesheet" />
+
+    <style>
+        :root {
+            --sand: #dda15e;
+            --navy: #27374d;
+            --navy-deep: #141f2e;
+            --ink: #0d1b2a;
+            --board: #d1cfcf;
+            --empty: #caf0f8;
+            --size: min(400px, 92vw);
+            --gap: calc(var(--size) / 50);
+            --tile: calc((var(--size) - 5 * var(--gap)) / 4);
+            --move: 110ms;
+            --font: "Ubuntu", "Trebuchet MS", system-ui, sans-serif;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: var(--font);
+        }
+
+        [hidden] {
+            display: none !important;
+        }
+
+        body {
+            background-color: var(--sand);
+            color: var(--navy);
+            min-height: 100vh;
+        }
+
+        main {
+            min-height: 100vh;
+            display: grid;
+            place-items: center;
+            padding: 24px 12px;
+        }
+
+        button {
+            font: inherit;
+            color: inherit;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        button:focus-visible {
+            outline: 3px solid #fff;
+            outline-offset: 3px;
+        }
+
+        .screen {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            width: 100%;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        /* ---------- Shared controls ---------- */
+        .play-btn {
+            border: 0;
+            border-radius: 14px;
+            background: var(--navy);
+            color: #fff;
+            font-size: 1.6rem;
+            font-weight: 700;
+            padding: 16px 64px;
+            box-shadow: 0 6px 0 var(--navy-deep), 0 14px 24px rgba(39, 55, 77, 0.35);
+            transition: transform 90ms ease-out, box-shadow 90ms ease-out;
+        }
+
+        .play-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 0 var(--navy-deep), 0 18px 28px rgba(39, 55, 77, 0.35);
+        }
+
+        .play-btn:active {
+            transform: translateY(4px);
+            box-shadow: 0 2px 0 var(--navy-deep), 0 6px 12px rgba(39, 55, 77, 0.3);
+        }
+
+        .play-btn.small {
+            font-size: 1.25rem;
+            padding: 12px 44px;
+        }
+
+        .text-link {
+            border: 0;
+            background: none;
+            font-size: 1.05rem;
+            font-weight: 700;
+            text-decoration: underline;
+            text-decoration-thickness: 2px;
+            text-underline-offset: 5px;
+            padding: 6px 4px;
+        }
+
+        .text-link:hover {
+            text-decoration-thickness: 3px;
+        }
+
+        .icon-btn {
+            position: fixed;
+            top: 14px;
+            right: 14px;
+            z-index: 20;
+            width: 42px;
+            height: 42px;
+            border: 0;
+            border-radius: 50%;
+            background: rgba(39, 55, 77, 0.16);
+            display: grid;
+            place-items: center;
+            transition: background-color 120ms;
+        }
+
+        .icon-btn:hover {
+            background: rgba(39, 55, 77, 0.28);
+        }
+
+        .icon-btn .off {
+            display: none;
+        }
+
+        .icon-btn[aria-pressed="true"] .on {
+            display: none;
+        }
+
+        .icon-btn[aria-pressed="true"] .off {
+            display: block;
+        }
+
+        /* ---------- Menu ---------- */
+        .title {
+            --t: clamp(60px, 19vw, 92px);
+            display: flex;
+            gap: calc(var(--t) / 10);
+            margin-bottom: 34px;
+        }
+
+        .title-tile {
+            width: var(--t);
+            height: var(--t);
+            border-radius: calc(var(--t) / 8);
+            display: grid;
+            place-items: center;
+            font-size: calc(var(--t) * 0.56);
+            font-weight: 700;
+            box-shadow: inset 0 -6px 0 rgba(0, 0, 0, 0.2);
+        }
+
+        .title-tile.t2 {
+            background: #90e0ef;
+            color: var(--ink);
+        }
+
+        .title-tile.t0 {
+            background: var(--empty);
+            color: rgba(39, 55, 77, 0.55);
+            box-shadow: none;
+        }
+
+        .title-tile.t4 {
+            background: #00b4d8;
+            color: var(--ink);
+        }
+
+        .title-tile.t8 {
+            background: #0077b6;
+            color: #fff;
+        }
+
+        .modes {
+            display: flex;
+            gap: 4px;
+            padding: 4px;
+            background: rgba(39, 55, 77, 0.16);
+            border-radius: 12px;
+        }
+
+        .mode {
+            border: 0;
+            background: transparent;
+            border-radius: 9px;
+            padding: 9px 20px;
+            font-size: 1rem;
+            font-weight: 700;
+            transition: background-color 120ms, color 120ms;
+        }
+
+        .mode[aria-pressed="true"] {
+            background: var(--navy);
+            color: #fff;
+        }
+
+        .mode-hint {
+            margin: 12px 0 28px;
+            min-height: 1.5em;
+            font-weight: 500;
+            text-align: center;
+        }
+
+        .menu-actions {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 22px;
+        }
+
+        /* ---------- Tutorial ---------- */
+        .rules {
+            width: min(460px, 100%);
+            border: 2px solid rgba(255, 255, 255, 0.75);
+            border-radius: 14px;
+            padding: 22px 22px 24px;
+        }
+
+        .rules h1 {
+            font-size: 2rem;
+            text-align: center;
+            margin-bottom: 14px;
+        }
+
+        .rules section+section {
+            margin-top: 16px;
+        }
+
+        .rules h2 {
+            font-size: 1.05rem;
+            margin-bottom: 4px;
+        }
+
+        .rules p {
+            line-height: 1.5;
+            font-weight: 500;
+        }
+
+        .example {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 8px;
+            font-weight: 700;
+        }
+
+        .chip {
+            width: 42px;
+            height: 42px;
+            border-radius: 7px;
+            display: grid;
+            place-items: center;
+            font-size: 1.05rem;
+            font-weight: 700;
+            box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.2);
+        }
+
+        .tutorial-actions {
+            margin-top: 24px;
+            display: flex;
+            justify-content: center;
+        }
+
+        /* ---------- Game ---------- */
+        .hud {
+            width: var(--size);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .mode-name {
+            font-size: 1.05rem;
+            font-weight: 700;
+        }
+
+        .stats {
+            width: var(--size);
+            display: flex;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+
+        .stat {
+            position: relative;
+            flex: 1;
+            padding: 8px 12px;
+            border-radius: 12px;
+            background: rgba(39, 55, 77, 0.14);
+            text-align: center;
+        }
+
+        .stat-label {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .stat-value {
+            display: block;
+            font-size: 2rem;
+            font-weight: 700;
+            line-height: 1.1;
+        }
+
+        .gain {
+            position: absolute;
+            top: 6px;
+            right: 12px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            pointer-events: none;
+        }
+
+        .board {
+            position: relative;
+            width: var(--size);
+            height: var(--size);
+            border-radius: 14px;
+            background: var(--board);
+            box-shadow: 0 10px 30px rgba(39, 55, 77, 0.35);
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        .cells {
+            position: absolute;
+            inset: 0;
+            display: grid;
+            grid-template-columns: repeat(4, var(--tile));
+            grid-auto-rows: var(--tile);
+            gap: var(--gap);
+            padding: var(--gap);
+        }
+
+        .cell {
+            background: var(--empty);
+            border-radius: 8px;
+        }
+
+        .tiles {
+            position: absolute;
+            inset: 0;
+            pointer-events: none;
+        }
+
+        .tile {
+            position: absolute;
+            top: 0;
+            left: 0;
+            z-index: 2;
+            width: var(--tile);
+            height: var(--tile);
+            transform: translate(calc(var(--gap) + var(--c) * (var(--tile) + var(--gap))),
+                    calc(var(--gap) + var(--r) * (var(--tile) + var(--gap))));
+            transition: transform var(--move) ease-out;
+        }
+
+        .tile.merging {
+            z-index: 4;
+        }
+
+        .tile-inner {
+            width: 100%;
+            height: 100%;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: calc(var(--tile) * 0.42);
+            font-weight: 700;
+            box-shadow: inset 0 -5px 0 rgba(0, 0, 0, 0.2);
+        }
+
+        .tile-inner[data-d="3"] {
+            font-size: calc(var(--tile) * 0.34);
+        }
+
+        .tile-inner[data-d="4"] {
+            font-size: calc(var(--tile) * 0.27);
+        }
+
+        .ring {
+            position: absolute;
+            inset: 0;
+            border: 3px solid;
+            border-radius: 8px;
+            pointer-events: none;
+        }
+
+        .spark {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 9px;
+            height: 9px;
+            border-radius: 2px;
+            pointer-events: none;
+        }
+
+        .overlay {
+            position: absolute;
+            inset: 0;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 20px;
+            border-radius: 14px;
+            background: rgba(221, 161, 94, 0.88);
+            backdrop-filter: blur(3px);
+            -webkit-backdrop-filter: blur(3px);
+            text-align: center;
+        }
+
+        .overlay h2 {
+            font-size: 2.4rem;
+        }
+
+        .overlay p {
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        .overlay .ov-score {
+            margin-bottom: 10px;
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            .tile {
+                transition-duration: 1ms;
+            }
+
+            .play-btn {
+                transition: none;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <button id="muteBtn" class="icon-btn" aria-label="Mute sound" aria-pressed="false">
+        <svg class="on" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M11 5 6 9H3v6h3l5 4V5z" />
+            <path d="M15.5 8.5a5 5 0 0 1 0 7" />
+            <path d="M18.5 5.5a9 9 0 0 1 0 13" />
+        </svg>
+        <svg class="off" viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M11 5 6 9H3v6h3l5 4V5z" />
+            <path d="m16 9 5 6M21 9l-5 6" />
+        </svg>
+    </button>
+
+    <main>
+        <!-- Menu -->
+        <section id="screen-menu" class="screen active">
+            <h1 class="title" aria-label="2048">
+                <span class="title-tile t2" aria-hidden="true">2</span>
+                <span class="title-tile t0" aria-hidden="true">0</span>
+                <span class="title-tile t4" aria-hidden="true">4</span>
+                <span class="title-tile t8" aria-hidden="true">8</span>
+            </h1>
+
+            <div class="modes" role="group" aria-label="Game mode">
+                <button class="mode" data-mode="classic" aria-pressed="true">Classic</button>
+                <button class="mode" data-mode="fibonacci" aria-pressed="false">Fibonacci</button>
+            </div>
+            <p id="modeHint" class="mode-hint"></p>
+
+            <div class="menu-actions">
+                <button id="playBtn" class="play-btn">Play</button>
+                <button id="tutorialBtn" class="text-link">Tutorial</button>
+            </div>
+        </section>
+
+        <!-- Tutorial -->
+        <section id="screen-tutorial" class="screen">
+            <div class="rules">
+                <h1>How to play</h1>
+
+                <section>
+                    <h2>Move the tiles</h2>
+                    <p>Press the arrow keys, or swipe on a touch screen. Every tile slides as far as it can in that
+                        direction.</p>
+                </section>
+
+                <section>
+                    <h2>Merge to grow</h2>
+                    <p>When two matching tiles run into each other, they merge into one bigger tile.</p>
+                    <div class="example">
+                        <span class="chip" data-mode="classic" data-v="2"></span>+
+                        <span class="chip" data-mode="classic" data-v="2"></span>=
+                        <span class="chip" data-mode="classic" data-v="4"></span>
+                    </div>
+                </section>
+
+                <section>
+                    <h2>New tiles keep coming</h2>
+                    <p>A new tile appears after every 4 moves, and another one every 8 seconds on its own. Make room
+                        before the board fills up.</p>
+                </section>
+
+                <section>
+                    <h2>Fibonacci mode</h2>
+                    <p>Tiles are Fibonacci numbers. Merge neighboring numbers in the sequence: 1 + 1, 1 + 2, 2 + 3,
+                        3 + 5, and so on. After each move, your score goes up by the highest tile that move created.
+                    </p>
+                    <div class="example">
+                        <span class="chip" data-mode="fibonacci" data-v="1"></span>+
+                        <span class="chip" data-mode="fibonacci" data-v="1"></span>=
+                        <span class="chip" data-mode="fibonacci" data-v="2"></span>
+                        <span style="width:14px"></span>
+                        <span class="chip" data-mode="fibonacci" data-v="2"></span>+
+                        <span class="chip" data-mode="fibonacci" data-v="3"></span>=
+                        <span class="chip" data-mode="fibonacci" data-v="5"></span>
+                    </div>
+                </section>
+
+                <section>
+                    <h2>Winning and losing</h2>
+                    <p>Reach 2048 (377 in Fibonacci mode) to win. The game ends when the board is full and no tiles
+                        can merge.</p>
+                </section>
+
+                <div class="tutorial-actions">
+                    <button id="tutorialBack" class="play-btn small">Got it</button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Game -->
+        <section id="screen-game" class="screen">
+            <div class="hud">
+                <button id="menuBtn" class="text-link">Menu</button>
+                <span id="modeName" class="mode-name"></span>
+            </div>
+
+            <div class="stats">
+                <div id="scoreStat" class="stat">
+                    <span class="stat-label">Score</span>
+                    <span id="score" class="stat-value">0</span>
+                </div>
+                <div id="highestStat" class="stat">
+                    <span class="stat-label">Highest</span>
+                    <span id="highest" class="stat-value">0</span>
+                </div>
+            </div>
+
+            <div id="board" class="board" role="group" aria-label="Game board">
+                <div id="cells" class="cells"></div>
+                <div id="tiles" class="tiles"></div>
+
+                <div id="overlay" class="overlay" role="dialog" aria-live="polite" hidden>
+                    <h2 id="ovTitle"></h2>
+                    <p id="ovText"></p>
+                    <p id="ovScore" class="ov-score"></p>
+                    <button id="againBtn" class="play-btn small">Play again</button>
+                    <button id="ovMenuBtn" class="text-link">Menu</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <script>
+        /* =====================================================================
+           SFX — procedural audio (Web Audio). Lazy AudioContext, compressor on
+           master, shared noise buffer, per-category throttle, tone()/noiseBurst().
+           ===================================================================== */
+        const SFX = (() => {
+            let ctx = null, master = null, noiseBuf = null, muted = false;
+            const stamp = {};
+            const PENT = [0, 2, 4, 7, 9];
+
+            // Merge pitch climbs a pentatonic scale with the tile's level.
+            const pitch = (level) => {
+                const i = Math.max(0, Math.min(level - 1, 12));
+                return 523.25 * Math.pow(2, (PENT[i % 5] + 12 * Math.floor(i / 5)) / 12);
+            };
+
+            function ensure() {
+                if (ctx) return ctx;
+                const AC = window.AudioContext || window.webkitAudioContext;
+                if (!AC) return null;
+                try {
+                    ctx = new AC();
+                } catch (err) {
+                    return null;
+                }
+                const comp = ctx.createDynamicsCompressor();
+                comp.threshold.value = -18;
+                comp.knee.value = 24;
+                comp.ratio.value = 6;
+                comp.attack.value = 0.003;
+                comp.release.value = 0.2;
+                master = ctx.createGain();
+                master.gain.value = muted ? 0 : 0.8;
+                master.connect(comp);
+                comp.connect(ctx.destination);
+
+                noiseBuf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+                const data = noiseBuf.getChannelData(0);
+                for (let i = 0; i < data.length; i++) data[i] = Math.random() * 2 - 1;
+                return ctx;
+            }
+
+            function unlock() {
+                const c = ensure();
+                if (c && c.state === "suspended") c.resume();
+            }
+            window.addEventListener("pointerdown", unlock, { passive: true });
+            window.addEventListener("keydown", unlock, { passive: true });
+
+            function open(cat, gap) {
+                const now = performance.now();
+                if (now - (stamp[cat] || -1e9) < gap) return false;
+                stamp[cat] = now;
+                return true;
+            }
+
+            function tone(freq, dur, o = {}) {
+                const c = ensure();
+                if (!c || muted) return;
+                const { type = "sine", vol = 0.2, delay = 0, slideTo = null, attack = 0.005 } = o;
+                const t0 = c.currentTime + delay;
+                const osc = c.createOscillator();
+                const g = c.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, t0);
+                if (slideTo) osc.frequency.exponentialRampToValueAtTime(slideTo, t0 + dur);
+                g.gain.setValueAtTime(0.0001, t0);
+                g.gain.exponentialRampToValueAtTime(vol, t0 + attack);
+                g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+                osc.connect(g);
+                g.connect(master);
+                osc.start(t0);
+                osc.stop(t0 + dur + 0.03);
+            }
+
+            function noiseBurst(dur, o = {}) {
+                const c = ensure();
+                if (!c || muted) return;
+                const { vol = 0.08, delay = 0, freq = 1000, q = 1, type = "bandpass", sweepTo = null } = o;
+                const t0 = c.currentTime + delay;
+                const src = c.createBufferSource();
+                src.buffer = noiseBuf;
+                const f = c.createBiquadFilter();
+                f.type = type;
+                f.Q.value = q;
+                f.frequency.setValueAtTime(freq, t0);
+                if (sweepTo) f.frequency.exponentialRampToValueAtTime(sweepTo, t0 + dur);
+                const g = c.createGain();
+                g.gain.setValueAtTime(vol, t0);
+                g.gain.exponentialRampToValueAtTime(0.0001, t0 + dur);
+                src.connect(f);
+                f.connect(g);
+                g.connect(master);
+                src.start(t0, Math.random() * 0.5);
+                src.stop(t0 + dur + 0.02);
+            }
+
+            return {
+                get muted() { return muted; },
+                setMuted(m) {
+                    muted = m;
+                    if (master) master.gain.value = m ? 0 : 0.8;
+                },
+                // Menu / button tick
+                click() {
+                    if (!open("ui", 40)) return;
+                    tone(520, 0.05, { type: "triangle", vol: 0.08, slideTo: 380 });
+                },
+                // Tiles sliding: soft swish
+                slide() {
+                    if (!open("slide", 50)) return;
+                    noiseBurst(0.09, { vol: 0.05, freq: 600, q: 0.7, sweepTo: 1500 });
+                },
+                // Key press that moved nothing: dull thud
+                blocked() {
+                    if (!open("blocked", 90)) return;
+                    tone(130, 0.11, { type: "triangle", vol: 0.2, slideTo: 70 });
+                },
+                // New tile: tiny rising blip
+                spawn(delay = 0) {
+                    if (!open("spawn", 70)) return;
+                    tone(480, 0.08, { vol: 0.06, slideTo: 720, delay });
+                },
+                // Merge chime per merge (up to 4 per move, staggered). Fibonacci mode
+                // layers a second voice at the golden ratio.
+                merge(levels, fib, delay = 0) {
+                    if (!open("merge", 30)) return;
+                    levels.slice().sort((a, b) => a - b).slice(-4).forEach((lv, i) => {
+                        const f = pitch(lv);
+                        const d = delay + i * 0.055;
+                        tone(f, 0.3, { vol: 0.17, delay: d });
+                        tone(f * 2, 0.16, { type: "triangle", vol: 0.06, delay: d });
+                        noiseBurst(0.03, { vol: 0.04, freq: 3500, type: "highpass", delay: d });
+                        if (fib) tone(f * 1.618, 0.28, { vol: 0.08, delay: d + 0.045 });
+                    });
+                },
+                // New highest tile: sparkle
+                record(delay = 0) {
+                    if (!open("record", 200)) return;
+                    [1318.5, 1568, 2093].forEach((f, i) =>
+                        tone(f, 0.14, { type: "triangle", vol: 0.07, delay: delay + 0.16 + i * 0.06 }));
+                },
+                win() {
+                    [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => {
+                        tone(f, 0.3, { vol: 0.16, delay: i * 0.11 });
+                        tone(f * 2, 0.2, { type: "triangle", vol: 0.05, delay: i * 0.11 });
+                    });
+                },
+                lose() {
+                    [392, 329.6, 261.6, 196].forEach((f, i) =>
+                        tone(f, 0.32, { type: "triangle", vol: 0.16, delay: i * 0.16, slideTo: f * 0.97 }));
+                },
+            };
+        })();
+
+        /* =====================================================================
+           Helpers
+           ===================================================================== */
+        const $ = (s, r = document) => r.querySelector(s);
+        const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+        const reduceMotion = !!(window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches);
+        const MOVE_MS = 110; // keep in sync with --move in CSS
+
+        // Web Animations wrapper: skips cleanly when motion is reduced or unsupported.
+        function fx(el, frames, opts, done) {
+            if (reduceMotion || typeof el.animate !== "function") {
+                if (done) done();
+                return;
+            }
+            const a = el.animate(frames, opts);
+            if (done) a.onfinish = done;
+        }
+
+        function textOn(hex) {
+            const n = parseInt(hex.slice(1), 16);
+            const [r, g, b] = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => {
+                v /= 255;
+                return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4);
+            });
+            const L = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+            return 1.05 / (L + 0.05) >= (L + 0.05) / 0.06 ? "#ffffff" : "#0d1b2a";
+        }
+
+        /* =====================================================================
+           Modes
+           ===================================================================== */
+        const FIB = [1, 2, 3, 5, 8, 13, 21, 34, 55, 89, 144, 233, 377, 610, 987, 1597, 2584];
+        const fibIndex = (v) => FIB.indexOf(v);
+
+        // Original 2048 palette (level 1 = tile 2 ... level 11 = tile 2048)
+        const CLASSIC_COLORS = ["#90e0ef", "#00b4d8", "#0077b6", "#03045e", "#023047", "#fca311",
+            "#14213d", "#e63946", "#ffc300", "#6a040f", "#000000"];
+        const FIB_COLORS = ["#d8f3a2", "#a7e3a0", "#5ccfa4", "#2ab7b3", "#1f92a8", "#2a6f97", "#284b8f",
+            "#3f3d9e", "#6a3fa0", "#943a9c", "#c2368a", "#e5484d", "#f08a24", "#ffc300", "#ffb703",
+            "#fb8500", "#0d1b2a"];
+
+        const MODES = {
+            classic: {
+                label: "Classic",
+                hint: "Merge two equal tiles.",
+                target: 2048,
+                seed: 2,
+                pool: [2, 4, 8, 2, 4, 8, 2, 2, 4, 4, 2, 8, 2, 2, 4, 4, 2],
+                // [ms since start, values added to the spawn pool]
+                escalation: [[120000, [16]], [138000, [16, 32]], [178000, [16, 32, 64]]],
+                colors: CLASSIC_COLORS,
+                level: (v) => Math.round(Math.log2(v)),
+                canMerge: (a, b) => a === b,
+                // Same as the original game: +2 per merge.
+                scoreMove: (merges) => merges.length * 2,
+            },
+            fibonacci: {
+                label: "Fibonacci",
+                hint: "Merge neighboring Fibonacci numbers: 1, 2, 3, 5, 8\u2026",
+                target: 377,
+                seed: 1,
+                pool: [1, 2, 3, 1, 2, 3, 1, 1, 2, 2, 1, 3, 1, 1, 2, 2, 1],
+                escalation: [[120000, [5]], [138000, [5, 8]], [178000, [5, 8, 13]]],
+                colors: FIB_COLORS,
+                level: (v) => fibIndex(v) + 1,
+                // 1+1 is the only equal pair that merges; otherwise the two numbers must be
+                // neighbors in the sequence (1+2, 2+3, 3+5 ...).
+                canMerge: (a, b) => (a === b ? a === 1 : Math.abs(fibIndex(a) - fibIndex(b)) === 1),
+                // Each move adds the highest Fibonacci number it created.
+                scoreMove: (merges) => merges.reduce((m, x) => Math.max(m, x.value), 0),
+            },
+        };
+
+        const colorFor = (mode, v) => mode.colors[Math.min(mode.level(v) - 1, mode.colors.length - 1)];
+
+        /* =====================================================================
+           State + DOM refs
+           ===================================================================== */
+        const screens = { menu: $("#screen-menu"), tutorial: $("#screen-tutorial"), game: $("#screen-game") };
+        const board = $("#board");
+        const tilesEl = $("#tiles");
+        const overlay = $("#overlay");
+        const scoreEl = $("#score");
+        const scoreStat = $("#scoreStat");
+        const highestEl = $("#highest");
+        const highestStat = $("#highestStat");
+        const modeHint = $("#modeHint");
+
+        const DIRS = { left: [0, -1], right: [0, 1], up: [-1, 0], down: [1, 0] };
+
+        let state = "menu"; // menu | tutorial | playing | ending | over
+        let selectedMode = "classic";
+        let modeKey = "classic";
+        let mode = MODES.classic;
+        let grid = [];
+        let tileId = 0;
+        let score = 0;
+        let moves = 0;
+        let highest = 0;
+        let pool = [];
+        let runId = 0;
+        let spawnTimer = null;
+        let escTimers = [];
+
+        // Timeout that is dropped if the game was restarted or left in the meantime.
+        function later(fn, ms) {
+            const id = runId;
+            return setTimeout(() => { if (id === runId) fn(); }, ms);
+        }
+
+        function clearTimers() {
+            clearInterval(spawnTimer);
+            escTimers.forEach(clearTimeout);
+            escTimers = [];
+        }
+
+        /* =====================================================================
+           Tiles
+           ===================================================================== */
+        function place(t) {
+            t.el.style.setProperty("--r", t.r);
+            t.el.style.setProperty("--c", t.c);
+        }
+
+        function paint(t) {
+            const bg = colorFor(mode, t.value);
+            t.inner.style.backgroundColor = bg;
+            t.inner.style.color = textOn(bg);
+            t.inner.textContent = t.value;
+            const len = String(t.value).length;
+            t.inner.dataset.d = len >= 4 ? 4 : len === 3 ? 3 : 2;
+        }
+
+        function addTile(value, r, c, delay = 0) {
+            const el = document.createElement("div");
+            el.className = "tile";
+            const inner = document.createElement("div");
+            inner.className = "tile-inner";
+            el.appendChild(inner);
+            const t = { id: ++tileId, value, r, c, el, inner };
+            place(t);
+            paint(t);
+            tilesEl.appendChild(el);
+            grid[r][c] = t;
+            fx(inner, [{ transform: "scale(0.2)", opacity: 0 }, { transform: "scale(1)", opacity: 1 }],
+                { duration: 190, delay, fill: "backwards", easing: "cubic-bezier(.2,.9,.3,1.3)" });
+            return t;
+        }
+
+        // Merge feedback: pop, expanding ring, small burst of squares.
+        function popTile(t) {
+            const lvl = mode.level(t.value);
+            fx(t.inner, [{ transform: "scale(1)" },
+                { transform: `scale(${1.12 + Math.min(lvl, 10) * 0.012})`, offset: 0.45 },
+                { transform: "scale(1)" }], { duration: 230, easing: "ease-out" });
+            t.el.classList.add("merging");
+            setTimeout(() => t.el.classList.remove("merging"), 460);
+            if (reduceMotion) return;
+
+            const bg = t.inner.style.backgroundColor;
+            const size = t.el.offsetWidth || 60;
+
+            const ring = document.createElement("span");
+            ring.className = "ring";
+            ring.style.borderColor = bg;
+            t.el.appendChild(ring);
+            fx(ring, [{ transform: "scale(1)", opacity: 0.85 }, { transform: "scale(1.55)", opacity: 0 }],
+                { duration: 380, easing: "ease-out" }, () => ring.remove());
+
+            const n = 6;
+            for (let i = 0; i < n; i++) {
+                const p = document.createElement("span");
+                p.className = "spark";
+                p.style.background = bg;
+                t.el.appendChild(p);
+                const ang = (Math.PI * 2 * i) / n + Math.random() * 0.6;
+                const dist = size * (0.55 + Math.random() * 0.35);
+                const dx = Math.cos(ang) * dist;
+                const dy = Math.sin(ang) * dist;
+                fx(p, [{ transform: "translate(-50%,-50%) scale(1)", opacity: 1 },
+                    { transform: `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px)) scale(0.2)`, opacity: 0 }],
+                    { duration: 420 + Math.random() * 120, easing: "cubic-bezier(.1,.7,.3,1)" }, () => p.remove());
+            }
+        }
+
+        /* =====================================================================
+           Game logic
+           ===================================================================== */
+        function emptyCells() {
+            const out = [];
+            for (let r = 0; r < 4; r++) for (let c = 0; c < 4; c++) if (!grid[r][c]) out.push([r, c]);
+            return out;
+        }
+
+        function hasMoves() {
+            for (let r = 0; r < 4; r++) {
+                for (let c = 0; c < 4; c++) {
+                    const t = grid[r][c];
+                    if (!t) return true;
+                    const right = c < 3 ? grid[r][c + 1] : null;
+                    const down = r < 3 ? grid[r + 1][c] : null;
+                    if ((right && mode.canMerge(t.value, right.value)) ||
+                        (down && mode.canMerge(t.value, down.value))) return true;
+                }
+            }
+            return false;
+        }
+
+        function spawn(delayMs = 0) {
+            const cells = emptyCells();
+            if (!cells.length) return;
+            const [r, c] = cells[Math.floor(Math.random() * cells.length)];
+            const value = pool[Math.floor(Math.random() * pool.length)];
+            addTile(value, r, c, delayMs);
+            if (value > highest) {
+                highest = value;
+                highestEl.textContent = highest;
+            }
+            SFX.spawn(delayMs / 1000);
+        }
+
+        function checkEnd() {
+            if (state === "playing" && !hasMoves()) {
+                state = "ending";
+                later(() => endGame("lose"), MOVE_MS + 500);
+            }
+        }
+
+        // Cells of line i, ordered from the edge the tiles slide toward.
+        function lineCoords(dir, i) {
+            const out = [];
+            for (let j = 0; j < 4; j++) {
+                out.push(dir === "left" ? [i, j] : dir === "right" ? [i, 3 - j] : dir === "up" ? [j, i] : [3 - j, i]);
+            }
+            return out;
+        }
+
+        function nudge(dir) {
+            const [dr, dc] = DIRS[dir];
+            fx(board, [{ transform: "translate(0,0)" }, { transform: `translate(${dc * 5}px,${dr * 5}px)` },
+                { transform: "translate(0,0)" }], { duration: 140, easing: "ease-out" });
+        }
+
+        function move(dir) {
+            if (state !== "playing") return;
+            moves++;
+
+            const merges = [];
+            let moved = false;
+
+            for (let i = 0; i < 4; i++) {
+                const coords = lineCoords(dir, i);
+                const line = coords.map(([r, c]) => grid[r][c]).filter(Boolean);
+                coords.forEach(([r, c]) => { grid[r][c] = null; });
+
+                let slot = 0, last = null, lastMerged = false;
+                for (const t of line) {
+                    if (last && !lastMerged && mode.canMerge(last.value, t.value)) {
+                        // t slides into `last` and disappears; `last` grows.
+                        last.value += t.value;
+                        lastMerged = true;
+                        t.r = last.r;
+                        t.c = last.c;
+                        place(t);
+                        t.el.style.zIndex = 1;
+                        merges.push({ tile: last, gone: t, value: last.value });
+                        moved = true;
+                    } else {
+                        const [r, c] = coords[slot++];
+                        if (t.r !== r || t.c !== c) moved = true;
+                        t.r = r;
+                        t.c = c;
+                        place(t);
+                        grid[r][c] = t;
+                        last = t;
+                        lastMerged = false;
+                    }
+                }
+            }
+
+            // Sound + feedback
+            if (moved) SFX.slide();
+            else { SFX.blocked(); nudge(dir); }
+
+            const gain = mode.scoreMove(merges);
+            score += gain;
+
+            let newRecord = false;
+            for (const m of merges) {
+                if (m.value > highest) { highest = m.value; newRecord = true; }
+            }
+
+            if (merges.length) {
+                SFX.merge(merges.map((m) => mode.level(m.value)), modeKey === "fibonacci", MOVE_MS / 1000);
+                if (newRecord) SFX.record(MOVE_MS / 1000);
+                later(() => {
+                    merges.forEach((m) => {
+                        m.gone.el.remove();
+                        paint(m.tile);
+                        popTile(m.tile);
+                    });
+                    renderScore(gain);
+                    updateHighest(newRecord);
+                }, MOVE_MS);
+            }
+
+            // Original rule: a new tile every 4 moves (every key press counts).
+            if (moves % 4 === 0) spawn(moved ? MOVE_MS : 0);
+
+            if (highest >= mode.target) {
+                state = "ending";
+                later(() => endGame("win"), MOVE_MS + 500);
+            } else {
+                checkEnd();
+            }
+        }
+
+        /* =====================================================================
+           HUD
+           ===================================================================== */
+        function renderScore(gain) {
+            scoreEl.textContent = score;
+            if (gain > 0) {
+                fx(scoreEl, [{ transform: "scale(1)" }, { transform: "scale(1.2)" }, { transform: "scale(1)" }],
+                    { duration: 200 });
+                const g = document.createElement("span");
+                g.className = "gain";
+                g.textContent = "+" + gain;
+                scoreStat.appendChild(g);
+                fx(g, [{ transform: "translateY(0)", opacity: 1 }, { transform: "translateY(-22px)", opacity: 0 }],
+                    { duration: 700, easing: "ease-out" }, () => g.remove());
+            }
+        }
+
+        function updateHighest(pulse) {
+            highestEl.textContent = highest;
+            if (pulse) {
+                fx(highestEl, [{ transform: "scale(1)" }, { transform: "scale(1.25)" }, { transform: "scale(1)" }],
+                    { duration: 260 });
+            }
+        }
+
+        /* =====================================================================
+           Flow: start / end / screens
+           ===================================================================== */
+        function startGame(key) {
+            runId++;
+            clearTimers();
+            modeKey = key;
+            mode = MODES[key];
+            grid = Array.from({ length: 4 }, () => Array(4).fill(null));
+            tilesEl.innerHTML = "";
+            score = 0;
+            moves = 0;
+            highest = mode.seed;
+            pool = mode.pool.slice();
+            $("#modeName").textContent = mode.label;
+            scoreEl.textContent = "0";
+            highestEl.textContent = highest;
+            overlay.hidden = true;
+
+            for (let i = 0; i < 2; i++) {
+                const cells = emptyCells();
+                const [r, c] = cells[Math.floor(Math.random() * cells.length)];
+                addTile(mode.seed, r, c, i * 80);
+            }
+
+            state = "playing";
+            spawnTimer = setInterval(() => {
+                if (state !== "playing") return;
+                spawn(0);
+                checkEnd();
+            }, 8000);
+            escTimers = mode.escalation.map(([ms, add]) => setTimeout(() => pool.push(...add), ms));
+        }
+
+        function endGame(result) {
+            clearTimers();
+            state = "over";
+            $("#ovTitle").textContent = result === "win" ? "You win!" : "Game over";
+            $("#ovText").textContent = result === "win"
+                ? "You made the " + mode.target + " tile."
+                : "The board is full and nothing can merge.";
+            $("#ovScore").textContent = "Score " + score;
+            overlay.hidden = false;
+            fx(overlay, [{ opacity: 0 }, { opacity: 1 }], { duration: 250 });
+            if (result === "win") SFX.win(); else SFX.lose();
+            $("#againBtn").focus({ preventScroll: true });
+        }
+
+        function introTitle() {
+            $$(".title-tile").forEach((el, i) => fx(el,
+                [{ transform: "translateY(-28px) scale(0.6)", opacity: 0 }, { transform: "translateY(0) scale(1)", opacity: 1 }],
+                { duration: 420, delay: i * 90, easing: "cubic-bezier(.2,.9,.3,1.3)", fill: "backwards" }));
+        }
+
+        function show(name) {
+            Object.entries(screens).forEach(([k, el]) => el.classList.toggle("active", k === name));
+            if (name === "menu") introTitle();
+            window.scrollTo(0, 0);
+        }
+
+        function goMenu() {
+            runId++;
+            clearTimers();
+            state = "menu";
+            overlay.hidden = true;
+            show("menu");
+        }
+
+        /* =====================================================================
+           Wiring
+           ===================================================================== */
+        // Board background cells
+        for (let i = 0; i < 16; i++) {
+            const d = document.createElement("div");
+            d.className = "cell";
+            $("#cells").appendChild(d);
+        }
+
+        // Tutorial example chips use the real tile colors
+        $$(".chip").forEach((ch) => {
+            const m = MODES[ch.dataset.mode];
+            const v = Number(ch.dataset.v);
+            const bg = colorFor(m, v);
+            ch.style.background = bg;
+            ch.style.color = textOn(bg);
+            ch.textContent = v;
+        });
+
+        modeHint.textContent = MODES.classic.hint;
+        $$(".mode").forEach((b) => b.addEventListener("click", () => {
+            selectedMode = b.dataset.mode;
+            $$(".mode").forEach((x) => x.setAttribute("aria-pressed", String(x === b)));
+            modeHint.textContent = MODES[selectedMode].hint;
+            SFX.click();
+        }));
+
+        $("#playBtn").addEventListener("click", () => { SFX.click(); startGame(selectedMode); show("game"); });
+        $("#tutorialBtn").addEventListener("click", () => { SFX.click(); state = "tutorial"; show("tutorial"); });
+        $("#tutorialBack").addEventListener("click", () => { SFX.click(); goMenu(); });
+        $("#menuBtn").addEventListener("click", () => { SFX.click(); goMenu(); });
+        $("#ovMenuBtn").addEventListener("click", () => { SFX.click(); goMenu(); });
+        $("#againBtn").addEventListener("click", () => { SFX.click(); startGame(modeKey); });
+
+        const muteBtn = $("#muteBtn");
+        muteBtn.addEventListener("click", () => {
+            SFX.setMuted(!SFX.muted);
+            muteBtn.setAttribute("aria-pressed", String(SFX.muted));
+            muteBtn.setAttribute("aria-label", SFX.muted ? "Unmute sound" : "Mute sound");
+            SFX.click();
+        });
+
+        // Keyboard
+        document.addEventListener("keydown", (e) => {
+            const dir = { ArrowLeft: "left", ArrowRight: "right", ArrowUp: "up", ArrowDown: "down" }[e.key];
+            if (!dir || state !== "playing") return;
+            e.preventDefault();
+            move(dir);
+        });
+
+        // Swipe
+        let touch = null;
+        board.addEventListener("touchstart", (e) => {
+            const t = e.changedTouches[0];
+            touch = { x: t.clientX, y: t.clientY };
+        }, { passive: true });
+        board.addEventListener("touchend", (e) => {
+            if (!touch) return;
+            const t = e.changedTouches[0];
+            const dx = t.clientX - touch.x;
+            const dy = t.clientY - touch.y;
+            touch = null;
+            if (Math.max(Math.abs(dx), Math.abs(dy)) < 24) return;
+            move(Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? "right" : "left") : (dy > 0 ? "down" : "up"));
+        }, { passive: true });
+
+        introTitle();
+    </script>
+</body>
+
+</html>
