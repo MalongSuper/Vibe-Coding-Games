@@ -1,4 +1,4 @@
-## Classic 2048 Gane
+## Classic 2048 Game
 
 **2048** is a tile-merging puzzle game played on a **4×4 grid**. The goal is to combine tiles until the target tile is reached. In **Classic mode**, matching tiles are merged to create larger values, with **2048** as the winning tile. The game also includes a **Fibonacci mode**, where tiles follow the Fibonacci sequence and the target is **377**.
 
