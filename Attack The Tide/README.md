@@ -210,3 +210,24 @@ Buns are limited early in a stage, so spending everything immediately can make i
 ### Exploit Enemy Grouping
 
 Area-of-effect defenses such as TNT Barrel and Spikeweed become particularly useful when several enemies occupy nearby cells. Similarly, global powers are strongest when many enemies are simultaneously present.
+
+### 8. Key Methods
+
+The following functions are central to the operation of the game:
+
+| Method / Function | Essential Role |
+| --- | --- |
+| `startGame(stage, diff)` | Initializes a stage, sets difficulty, determines the number of waves, resets resources and entities, and prepares the battlefield. |
+| `makeWave(waveNo)` | Generates each enemy wave, determines its size, selects enemy types, distributes enemies among lanes, and schedules spawning. |
+| `spawnEnemy(id, lane)` | Creates an enemy instance with its HP, speed, damage, toughness, lane, timers, and special-state variables. |
+| `update(dt)` | Main high-level update function that advances time and calls the gameplay simulation while the game is active. |
+| `updateGame(dt)` | Coordinates the complete game simulation, including waves, heroes, enemies, projectiles, drops, effects, HUD updates, and victory detection. |
+| `updateWaves(dt)` | Controls the enemy spawn queue and determines when the next wave begins. |
+| `updateEnemies(dt)` | Drives enemy movement, blocking, attacks, status effects, special abilities, and breach detection. |
+| `placeHero(id, lane, col)` | Validates and deploys a selected hero while checking column restrictions, occupied cells, resources, and cooldowns. |
+| `updateUnits(dt)` | Controls hero abilities, attacks, cooldown behaviors, special units, and automated actions. |
+| `usePower(powerId)` | Checks Sacred Flame cost and cooldown, then applies battlefield-wide Super Power effects. |
+| `damageEnemy(e, dmg, kind, isPercent)` | Centralizes enemy damage, death handling, scoring, and Star Soldier rewards. |
+| `updateProjectiles(dt)` | Moves arrows, fireballs, cannonballs, poison attacks, and other projectile-based attacks and resolves their hits. |
+| `leakEnemy(e)` | Handles enemies reaching the final line, consuming a Spike Roller or ending the game if that lane has already been breached once. |
+| `endGame(win)` | Displays the final Victory or Defeat state and reports the player's score and collected stars. |
