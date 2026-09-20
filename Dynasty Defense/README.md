@@ -230,3 +230,22 @@ Every fifth wave introduces a boss, so the player should avoid entering these wa
 #### Prioritize the Most Dangerous Path
 
 The game explicitly identifies the path associated with boss spawning in its wave warning system. This gives the player advance information about where major threats will enter, allowing the player to prepare that direction before the wave begins.
+
+### 10. Key Methods
+
+| Method / Object | Essential Role |
+| --- | --- |
+| `initGame()` | Resets gold, Lives, wave state, selected heroes, enemies, projectiles, and starts the battlefield. |
+| `resizeCanvas()` | Builds the four directional spawn points and regenerates the tower-plot layout while preserving existing units. |
+| `generateHeroRoster()` | Creates the fixed roster of 36 selectable heroes and manages the six-hero draft. |
+| `handleUnitButtonClick()` | Handles selection of a standard unit or hero and checks whether the player can afford it. |
+| `place` logic in the canvas `mousedown` handler | Deploys units, spends gold, initializes their statistics, handles upgrades, and supports demolition mode. |
+| `WaveManager.initWaveSetup()` | Generates the next wave, chooses enemy types and lanes, and determines whether it is a boss or final wave. |
+| `WaveManager.update(dt)` | Controls preparation time, enemy spawning, wave transitions, and victory after the final wave. |
+| `WaveManager.spawnEnemy()` | Converts wave definitions into actual enemy entities and applies wave/difficulty scaling. |
+| `updateEntities(dt)` | Moves enemies toward the palace, applies life penalties when they reach the center, and controls automated tower attacks. |
+| `updateHUD()` | Displays current gold, wave progress, unit availability, and deployment status. |
+| `gameLoop(timestamp)` | Runs the game's continuous update and rendering cycle using `requestAnimationFrame`. |
+| `endGame(isVictory)` | Stops the battle and presents the Victory or Defeat result. |
+| `PathEngine` | Defines the four directional enemy entry points and the geometry used by enemy movement. |
+| `UnitDict` | Stores the core statistics for every standard unit: cost, range, damage, fire rate, and attack type. |
