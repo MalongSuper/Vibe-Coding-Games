@@ -100,3 +100,22 @@ When an AI runner collects a Sabotage power-up, it applies target selection logi
 3. **Checkpoint Risk Optimization**:
    - Take aggressive jump lines right after passing a checkpoint, as the penalty for crashing is minimal.
    - Play defensively when approaching a new checkpoint to avoid being sent back to the previous segment.
+  
+### 6. Key Methods
+Several JavaScript functions provide the core functionality of the game:
+
+| Method / Function | Essential Role |
+| --- | --- |
+| `startGame(distance)` | Initializes a race, selects the five AI opponents, assigns lanes, creates checkpoints, generates the track, and starts the game loop. |
+| `generateTrackLayout()` | Procedurally creates obstacles and power-ups, controls difficulty progression, and enforces obstacle spacing. |
+| `gameLoop(time)` | Runs the continuous animation cycle by updating the simulation and rendering the scene every frame. |
+| `updateSimulation(dt)` | Updates runners, obstacles, power-ups, particles, projectiles, collisions, and the HUD. |
+| `Runner.update(dt)` | Implements acceleration, movement, gravity, jumping, power-up timers, checkpoints, finishing, and AI control. |
+| `updateAI(dt)` | Detects upcoming obstacles and adapts jump timing according to obstacle distance and previous failures. |
+| `jump()` | Applies the runner's jump force and changes its state to `jumping`. |
+| `hit()` | Handles collisions, changes the runner to the hit state, records crashes, and triggers the explosion effect. |
+| `respawn()` | Restores the runner to its latest checkpoint after a crash and clears temporary effects. |
+| `applyPowerup(type)` | Applies Speed, Shield, Jetpack, or sabotage effects to a runner. |
+| `applySabotage(type)` | Selects an opponent and applies Butter, Arrow, or Freeze effects. |
+| `evalCollisions()` | Determines whether runners hit obstacles or collect power-ups. |
+| `checkRaceEnd()` | Detects when all runners finish, calculates the final ranking, and displays race results. |
