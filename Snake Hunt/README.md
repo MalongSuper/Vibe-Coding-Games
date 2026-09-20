@@ -59,3 +59,25 @@ Without a shield, hitting the boundary or the snake's own body causes a crash. E
 #### Rainbow Apple
 
 The Rainbow Apple temporarily clears the existing apples and creates **20–25 beneficial apples**. Normal spawning resumes after six seconds, creating a short period where the player can rapidly collect valuable items.
+
+### 4. Key Methods and Functions in the Code
+
+| Function | Purpose |
+| --- | --- |
+| `startGame()` | Resets the game state, initializes the snake, score, timers, power-ups, and apple spawning. |
+| `updateGame()` | Performs the main snake movement and collision/collection logic. |
+| `getTickMs()` | Calculates the snake's current movement speed based on length and active speed boost. |
+| `getRandomAppleType()` | Selects an apple type using weighted random probabilities. |
+| `spawnApple()` | Creates an apple at a valid position on the game board. |
+| `startAppleSpawning()` | Starts the repeating 2.5-second apple spawning cycle. |
+| `runSpawnTick()` | Determines how many apples to spawn and whether a bomb should appear. |
+| `cleanUpApples()` | Removes existing apples and their associated timers/effects. |
+| `triggerCrash()` | Stops the timer and starts the crash animation when the snake collides with a deadly object. |
+| `triggerBomb()` | Handles bomb explosions, screen effects, and game-over processing. |
+| `showGameOver()` | Displays the player's final score and survival time. |
+| `updateScoreDisplay()` | Updates the score shown in the game's HUD. |
+| `startTimer()` | Starts and manages the player's survival-time counter. |
+| `render()` | Continuously draws the snake, board, particles, and visual effects on the Canvas. |
+| `createFloatingText()` | Displays temporary messages such as `+10`, `-5`, `SHIELD`, or `RESET`. |
+
+The core game is organized around game state, timed updates, collision detection, weighted random generation, Canvas rendering, and DOM-based visual effects.
