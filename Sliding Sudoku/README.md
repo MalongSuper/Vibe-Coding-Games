@@ -52,3 +52,26 @@ When every cell matches the solution, the timer stops and a **diagonal wave/casc
 #### Difficulty Scaling
 
 The difficulty affects the board size and Sudoku structure rather than simply changing a numerical parameter. The Hard mode contains **324 cells**, making it substantially larger than the 36-cell Easy board.
+
+### 4. Key Methods and Functions in the Code
+
+| Function | Purpose |
+| --- | --- |
+| `generateSolution()` | Generates a complete valid Sudoku solution using randomized backtracking and the MRV heuristic. |
+| `blockIndex()` | Determines which Sudoku block a particular cell belongs to. |
+| `countBits()` | Counts available digits in a bitmask, supporting the MRV heuristic. |
+| `shuffledDigits()` | Randomizes the order in which candidate digits are tested. |
+| `findMRVCell()` | Selects the empty cell with the fewest available candidates to improve solving efficiency. |
+| `backtrack()` | Recursively fills the Sudoku grid and backtracks when a placement becomes invalid. |
+| `shuffleInPlace()` | Randomly swaps neighboring cells to scramble a solved board while preserving reachability. |
+| `shuffleBoard()` | Creates the playable starting puzzle from the generated solution. |
+| `buildBoardDOM()` | Creates the HTML cells that visually represent the Sudoku board. |
+| `updateCellDisplay()` | Updates a cell's displayed digit and determines whether it is currently correct. |
+| `selectCell()` | Handles the player's selected cell and its visual highlight. |
+| `trySwap()` | Performs an adjacent swap, updates moves, starts the timer, and checks for victory. |
+| `checkWin()` | Compares the current grid with the solution to determine whether the puzzle is solved. |
+| `startTimer()` | Runs the one-second game timer. |
+| `startNewGame()` | Initializes the selected difficulty, generates the solution, scrambles the board, and starts a new game. |
+| `showWinModal()` | Displays the player's final move count and completion time. |
+
+The most technically significant methods are generateSolution(), findMRVCell(), and backtrack(), because together they generate valid Sudoku boards using constraint tracking, bitmasks, randomization, and the Minimum Remaining Values (MRV) heuristic.
