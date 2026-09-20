@@ -16,4 +16,20 @@ The central mechanic is the **movement and merging system**. For each move, the 
 
 Two different rule sets are implemented through the `MODES` object. Classic mode allows equal tiles to merge, while Fibonacci mode allows neighboring Fibonacci numbers to merge, such as `1 + 2 = 3`, `2 + 3 = 5`, and `3 + 5 = 8`.
 
+### Key Methods and Functions
+
+Several JavaScript functions control the main gameplay:
+
+- **`startGame()`** — initializes a new game, creates the 4×4 grid, resets the score and moves, and places the starting tiles.
+- **`move(dir)`** — handles the main movement logic, including sliding tiles, detecting merges, updating the score, and checking for victory.
+- **`spawn()`** — creates a new tile in a random empty cell.
+- **`hasMoves()`** — checks whether empty cells or valid merges remain.
+- **`checkEnd()`** — determines whether the player has reached a game-over condition.
+- **`addTile()`** — creates a tile element and adds it to the grid.
+- **`lineCoords()`** — determines the order in which cells are processed for each movement direction.
+- **`scoreMove()`** — calculates the score gained from merges according to the selected game mode.
+- **`endGame()`** — displays the win or game-over screen and the final score.
+
+The game also contains supporting functions for animation, sound effects, screen navigation, keyboard input, and touch/swipe controls. For example, keyboard events convert the four arrow keys into movement directions, while touch events calculate the swipe direction before calling `move()`.
+
 Reference Code: https://www.geeksforgeeks.org/javascript/design-a-2048-game-in-javascript/
