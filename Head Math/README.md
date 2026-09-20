@@ -55,3 +55,24 @@ The final score determines the player's rank:
 | 150+ | Eternal Math |
 
 These ranks provide long-term goals beyond simply completing individual questions.
+
+### 4. Key Methods and Functions in the Code
+
+| Function | Purpose |
+| --- | --- |
+| `weightedNumber()` | Generates numbers with a higher probability of producing smaller values. |
+| `selectMode()` | Selects Addition or Subtraction and controls the appropriate menu flow. |
+| `chooseTerms()` | Sets the number of terms for Addition problems. |
+| `startGame()` | Resets game variables, activates the game interface, and creates the first equation. |
+| `generateEquation()` | Creates a new mathematical problem and calculates its correct answer. |
+| `startQuestionTimer()` | Tracks total game time and detects when the player has struggled for 15 seconds. |
+| `submitAnswer()` | Validates the player's input, checks correctness, updates the score, or triggers game over. |
+| `checkPowerRestoration()` | Awards a randomly selected power-up after every five correct answers. |
+| `usePowerCalculator()` | Automatically solves the current question and awards a point. |
+| `usePowerDigits()` | Removes a digit and recalculates the answer to make the problem easier. |
+| `usePowerBoost()` | Activates the 5-point bonus for the next correct answer. |
+| `getRank()` | Converts the final score into one of the seven ranks. |
+| `endGame()` | Stops the timer and displays the final score, time, and rank. |
+| `runEngine()` | Continuously renders the background matrix animation and particle effects. |
+
+The core gameplay functions are concentrated in the JavaScript section of the HTML file, while the Canvas functions provide the game's animated visual effects and power-up graphics.
